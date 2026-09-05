@@ -1,0 +1,1642 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Retinova — Smarter Screening. Better Vision. (Demo Prototype)</title>
+<meta name="description" content="Retinova — an explainable AI screening-support demo prototype for diabetic retinopathy screening in rural India. Prototype only, not a real medical device." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        display: ['Poppins','Noto Sans Devanagari','Noto Sans Telugu','sans-serif'],
+        body: ['Inter','Noto Sans Devanagari','Noto Sans Telugu','sans-serif'],
+      },
+      colors: {
+        ns: {
+          ink: '#241B3A',
+          violet: {50:'#F5F3FF',100:'#EDE8FE',200:'#DCD3FD',300:'#C1AFFB',400:'#A385F7',500:'#7C5CF0',600:'#6D28D9',700:'#5B21B6',800:'#4C1D95',900:'#33146B'},
+          cyan: {50:'#ECFEFF',100:'#CFFAFE',300:'#67E8F9',400:'#22D3EE',500:'#06B6D4',600:'#0891B2',700:'#0E7490'},
+        },
+        grade: {
+          none:'#15803D', mild:'#CA8A04', moderate:'#EA580C', severe:'#DC2626', prolif:'#7F1D1D', ungradable:'#57534E',
+        }
+      },
+      boxShadow: { soft: '0 10px 30px -12px rgba(76,29,149,0.25)', glow: '0 0 0 3px rgba(34,211,238,0.35)' },
+      borderRadius: { xl2: '1.1rem' },
+    }
+  }
+}
+</script>
+<style>
+  :root { --nsfs: 16px; }
+  html { scroll-behavior: smooth; }
+  body { font-size: var(--nsfs); }
+  body.a11y-large { --nsfs: 19px; }
+  body.a11y-contrast { filter: contrast(1.15); }
+  body.a11y-contrast .glass-card { background:#fff !important; }
+  * { -webkit-tap-highlight-color: transparent; }
+  ::-webkit-scrollbar { width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb { background:#C1AFFB; border-radius:8px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  a, button, [tabindex] { outline-offset: 2px; }
+  a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 3px solid #22D3EE; outline-offset: 2px; border-radius: 6px;
+  }
+  .hero-gradient { background: radial-gradient(120% 140% at 15% 0%, #4338CA 0%, #5B21B6 28%, #6D28D9 52%, #0E7490 82%, #06B6D4 100%); }
+  .orb { position:absolute; border-radius:50%; filter: blur(50px); opacity:.45; pointer-events:none; }
+  @keyframes floaty { 0%,100%{ transform: translateY(0) translateX(0);} 50%{ transform: translateY(-24px) translateX(14px);} }
+  .orb-anim { animation: floaty 16s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .orb-anim { animation: none; } }
+  .glass-card { background: rgba(255,255,255,0.94); backdrop-filter: blur(14px); }
+  .sidebar-grad { background: linear-gradient(190deg,#2A0F5C 0%, #4C1D95 55%, #5B21B6 100%); }
+  .nav-active { background: linear-gradient(90deg, rgba(34,211,238,0.22), rgba(34,211,238,0.04)); box-shadow: inset 3px 0 0 0 #22D3EE; }
+  .grad-btn { background: linear-gradient(90deg,#7C5CF0,#06B6D4); }
+  .grad-btn:hover { background: linear-gradient(90deg,#6D28D9,#0891B2); }
+  .status-chip-none { background:#DCFCE7; color:#15803D; }
+  .status-chip-mild { background:#FEF9C3; color:#854D0E; }
+  .status-chip-moderate { background:#FFEDD5; color:#9A3412; }
+  .status-chip-severe { background:#FEE2E2; color:#B91C1C; }
+  .status-chip-prolif { background:#FEE2E2; color:#7F1D1D; }
+  .status-chip-ungradable { background:#F3F4F6; color:#44403C; }
+  .card-hover { transition: transform .15s ease, box-shadow .15s ease; }
+  .card-hover:hover { transform: translateY(-2px); box-shadow: 0 14px 34px -14px rgba(76,29,149,.35); }
+  .demo-chip { background:#FDF4FF; color:#86198F; border:1px solid #F5D0FE; }
+  input[type=range].hm-slider { -webkit-appearance:none; height:6px; border-radius:6px; background:linear-gradient(90deg,#6D28D9,#06B6D4); }
+  input[type=range].hm-slider::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:#fff; border:3px solid #6D28D9; cursor:pointer; margin-top:-8px; }
+  .fade-in { animation: fadein .35s ease both; }
+  @keyframes fadein { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .pulse-dot { animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.35;} }
+  @media print {
+    .no-print { display:none !important; }
+    body { background:#fff; }
+  }
+  .scan-line { position:absolute; left:0; right:0; height:3px; background:linear-gradient(90deg,transparent,#22D3EE,transparent); animation: scan 1.8s linear infinite; }
+  @keyframes scan { 0%{ top:4%; } 100%{ top:94%; } }
+</style>
+</head>
+<body class="font-body text-ns-ink bg-white">
+<div id="app"></div>
+<script>
+// ===================== NETRASETU AI — DEMO PROTOTYPE =====================
+// Sample / prototype only — not a trained clinical system.
+// Frontend-only, vanilla JS SPA. No backend, no real AI model.
+
+const GRADES = ['no_apparent','mild','moderate','severe','proliferative','ungradable'];
+
+const T = {
+en: {
+  brand:'Retinova', tagline:'Smarter Screening. Better Vision.', subtitle:'Bridge to eye care',
+  nav_dashboard:'Dashboard', nav_new:'New Screening', nav_patients:'Patients', nav_history:'History',
+  nav_voice:'Voice Assistant', nav_photo:'Photo Guide', nav_access:'Accessibility', nav_disclaimer:'Disclaimer',
+  nav_settings:'Settings', nav_logout:'Logout',
+  btn_start_demo:'Start Demo Screening', btn_how:'How It Works', btn_disclaimer:'View Disclaimer',
+  hero_h1:'AI-assisted screening support for diabetic retinopathy',
+  hero_sub:'Designed for rural and primary eye-care workers. Upload a retinal photo, see an explainable demo result, and hear it explained in your language.',
+  trust_chip:'Demo prototype · Screening support only',
+  banner_text:'Prototype for demonstration. Retinova is a screening-support concept and does not diagnose disease.',
+  disclaimer_fixed:'Retinova is an AI-assisted screening-support prototype. It does not replace examination or diagnosis by a qualified eye-care professional.',
+  demo_badge:'DEMO / SIMULATED OUTPUT — not a real medical prediction',
+  login_title:'Welcome back', login_sub:'Sign in to the Retinova demo',
+  email:'Email', password:'Password', demo_login:'Demo Login', forgot:'Forgot password?',
+  demo_accounts:'Demo accounts', worker:'Healthcare Worker', doctor:'Doctor', admin:'Administrator',
+  do_not_upload:'Demo site · Do not upload real patient identity',
+  sample_data:'Sample data for prototype',
+  total_screenings:'Total screenings', no_apparent_dr:'No apparent DR', needs_review:'Needs review',
+  high_concern:'High concern', ungradable_lbl:'Ungradable',
+  new_screening:'New Screening', recent_screenings:'Recent screenings',
+  patient_code:'Patient code', date:'Date', eye:'Eye', result:'Result', confidence:'Confidence', status:'Status', view:'View',
+  step_details:'Screening details', step_upload:'Upload photo', step_quality:'Quality check',
+  age_range:'Age range (optional)', gender:'Gender (optional)', known_diabetes:'Known diabetes',
+  yes:'Yes', no:'No', not_sure:'Not sure', which_eye:'Which eye', right:'Right', left:'Left', both:'Both',
+  consent:'Patient/guardian agreed to use this photo for demo screening.',
+  continue:'Continue', back:'Back',
+  upload_zone_title:'Drag and drop a retinal photo here', upload_zone_sub:'JPG or PNG, or choose a demo image below',
+  browse:'Browse files', use_demo_image:'Use a demo image',
+  photo_tip1:'Use a fundus / retinal photo, not a normal selfie',
+  photo_tip2:'Image should be reasonably sharp and centered',
+  photo_tip3:'Eyelids should not cover the view',
+  quality_fail_title:'IMAGE NOT CLEAR ENOUGH',
+  quality_fail_sub:'Please upload a clearer retinal photo. No screening grade will be shown.',
+  retake:'Choose another image', run_analysis:'Run Demo Analysis',
+  analyzing_1:'Image received', analyzing_2:'Preprocessing', analyzing_3:'Demo model analysis',
+  analyzing_4:'Explainability map', analyzing_5:'Result ready',
+  original_image:'Original image', heatmap_overlay:'Heatmap overlay',
+  what_this_means:'What this means', what_not_mean:'What this does not mean',
+  not_confirmed_dx:'Not a confirmed diagnosis', not_treatment:'Not a treatment plan',
+  not_full_exam:'Not a full eye exam', heatmap_not_proof:'Heatmap is not proof of disease',
+  legend_low:'Low influence', legend_med:'Medium influence', legend_high:'High influence',
+  hear_result:'Hear Result', generate_report:'Generate Demo Report', new_screening_btn:'New Screening',
+  next_step:'Next step',
+  heatmap_caption:'Heatmap only shows regions that influenced the demo model. It does not prove a lesion.',
+  dme_note:'This demo does not separately detect diabetic macular edema.',
+  one_photo_note:'One photo of one eye is not a complete eye examination.',
+  urgent_note:'Sudden vision loss, flashes, a dark curtain, or severe eye pain needs urgent real care, even if the demo result looks normal.',
+  patients_title:'Patients', history_title:'Screening history', filter_grade:'Filter by grade', search:'Search patient code',
+  all_grades:'All grades', last_result:'Last result',
+  report_title:'Demo Screening Report', screening_id:'Screening ID', model_version:'Model version',
+  print_report:'Print / Download', model_ver_demo:'demo-mock-v0',
+  voice_title:'Voice Assistant', voice_sub:'Ask NetraSetu about this demo, in your language.',
+  voice_start:'Start Screening', voice_explain:'Explain Result', voice_read:'Read Result',
+  voice_lang:'Change language', voice_dash:'Go to dashboard', voice_photo:'Go to photo guide', voice_disc:'Go to disclaimer',
+  voice_what_is_dr:'What is diabetic retinopathy?', voice_how_upload:'How to upload a photo',
+  voice_listen:'Tap the mic and speak, or tap a suggestion', mic_not_supported:'Voice input is not supported here. You can still tap buttons.',
+  play:'Play', pause:'Pause', stop:'Stop', replay:'Replay',
+  voice_unsafe:'I can only help with this screening website. Please ask a qualified eye doctor.',
+  a11y_title:'Accessibility', text_size:'Text size', high_contrast:'High contrast', voice_guidance:'Voice guidance on/off', language:'Language',
+  photo_guide_title:'Photo guide', settings_title:'Settings', about_prototype:'About this prototype',
+  how_it_works_title:'How it works',
+  disclaimer_title:'Medical disclaimer',
+  small:'Small', normal:'Normal', large:'Large',
+  demo_mode:'Demo mode', role:'Role',
+},
+hi: {
+  brand:'Retinova', tagline:'बेहतर जांच. बेहतर दृष्टि.', subtitle:'नेत्र देखभाल का सेतु',
+  nav_dashboard:'डैशबोर्ड', nav_new:'नई जांच', nav_patients:'मरीज़', nav_history:'इतिहास',
+  nav_voice:'वॉइस सहायक', nav_photo:'फोटो गाइड', nav_access:'सुगमता', nav_disclaimer:'अस्वीकरण',
+  nav_settings:'सेटिंग्स', nav_logout:'लॉगआउट',
+  btn_start_demo:'डेमो जांच शुरू करें', btn_how:'यह कैसे काम करता है', btn_disclaimer:'अस्वीकरण देखें',
+  hero_h1:'डायबिटिक रेटिनोपैथी के लिए AI-सहायता प्राप्त जांच सहायता',
+  hero_sub:'ग्रामीण और प्राथमिक नेत्र-देखभाल कर्मियों के लिए बनाया गया। रेटिना फोटो अपलोड करें, समझने योग्य डेमो परिणाम देखें, और अपनी भाषा में सुनें।',
+  trust_chip:'डेमो प्रोटोटाइप · केवल जांच सहायता',
+  banner_text:'प्रदर्शन के लिए प्रोटोटाइप। Retinova एक जांच-सहायता अवधारणा है और यह रोग का निदान नहीं करता।',
+  disclaimer_fixed:'Retinova एक AI-सहायता प्राप्त जांच-सहायता प्रोटोटाइप है। यह किसी योग्य नेत्र चिकित्सक द्वारा जांच या निदान का स्थान नहीं लेता।',
+  demo_badge:'डेमो / अनुरूपित परिणाम — यह वास्तविक चिकित्सीय भविष्यवाणी नहीं है',
+  login_title:'वापसी पर स्वागत है', login_sub:'Retinova डेमो में साइन इन करें',
+  email:'ईमेल', password:'पासवर्ड', demo_login:'डेमो लॉगिन', forgot:'पासवर्ड भूल गए?',
+  demo_accounts:'डेमो खाते', worker:'स्वास्थ्य कर्मी', doctor:'डॉक्टर', admin:'प्रशासक',
+  do_not_upload:'डेमो साइट · वास्तविक मरीज़ की पहचान अपलोड न करें',
+  sample_data:'प्रोटोटाइप के लिए नमूना डेटा',
+  total_screenings:'कुल जांच', no_apparent_dr:'कोई स्पष्ट DR नहीं', needs_review:'समीक्षा आवश्यक',
+  high_concern:'उच्च चिंता', ungradable_lbl:'ग्रेड योग्य नहीं',
+  new_screening:'नई जांच', recent_screenings:'हाल की जांच',
+  patient_code:'मरीज़ कोड', date:'तारीख', eye:'आंख', result:'परिणाम', confidence:'विश्वास', status:'स्थिति', view:'देखें',
+  step_details:'जांच विवरण', step_upload:'फोटो अपलोड करें', step_quality:'गुणवत्ता जांच',
+  age_range:'आयु सीमा (वैकल्पिक)', gender:'लिंग (वैकल्पिक)', known_diabetes:'ज्ञात मधुमेह',
+  yes:'हाँ', no:'नहीं', not_sure:'निश्चित नहीं', which_eye:'कौन सी आंख', right:'दाईं', left:'बाईं', both:'दोनों',
+  consent:'मरीज़/अभिभावक ने डेमो जांच के लिए इस फोटो के उपयोग हेतु सहमति दी।',
+  continue:'जारी रखें', back:'पीछे',
+  upload_zone_title:'यहाँ रेटिना फोटो खींचें और छोड़ें', upload_zone_sub:'JPG या PNG, या नीचे दिया गया डेमो चित्र चुनें',
+  browse:'फाइल चुनें', use_demo_image:'डेमो चित्र उपयोग करें',
+  photo_tip1:'फंडस / रेटिना फोटो उपयोग करें, सामान्य सेल्फी नहीं',
+  photo_tip2:'चित्र उचित रूप से स्पष्ट और केंद्रित होना चाहिए',
+  photo_tip3:'पलकें दृश्य को ढकें नहीं',
+  quality_fail_title:'चित्र स्पष्ट नहीं है',
+  quality_fail_sub:'कृपया अधिक स्पष्ट रेटिना फोटो अपलोड करें। कोई जांच ग्रेड नहीं दिखाया जाएगा।',
+  retake:'दूसरा चित्र चुनें', run_analysis:'डेमो विश्लेषण चलाएं',
+  analyzing_1:'चित्र प्राप्त हुआ', analyzing_2:'प्रीप्रोसेसिंग', analyzing_3:'डेमो मॉडल विश्लेषण',
+  analyzing_4:'व्याख्यात्मक मानचित्र', analyzing_5:'परिणाम तैयार',
+  original_image:'मूल चित्र', heatmap_overlay:'हीटमैप ओवरले',
+  what_this_means:'इसका अर्थ', what_not_mean:'इसका अर्थ यह नहीं है',
+  not_confirmed_dx:'पुष्ट निदान नहीं', not_treatment:'उपचार योजना नहीं',
+  not_full_exam:'पूर्ण नेत्र परीक्षण नहीं', heatmap_not_proof:'हीटमैप रोग का प्रमाण नहीं है',
+  legend_low:'कम प्रभाव', legend_med:'मध्यम प्रभाव', legend_high:'उच्च प्रभाव',
+  hear_result:'परिणाम सुनें', generate_report:'डेमो रिपोर्ट बनाएं', new_screening_btn:'नई जांच',
+  next_step:'अगला कदम',
+  heatmap_caption:'हीटमैप केवल उन क्षेत्रों को दिखाता है जिन्होंने डेमो मॉडल को प्रभावित किया। यह घाव का प्रमाण नहीं है।',
+  dme_note:'यह डेमो डायबिटिक मैकुलर एडिमा का अलग से पता नहीं लगाता।',
+  one_photo_note:'एक आंख की एक फोटो पूर्ण नेत्र परीक्षण नहीं है।',
+  urgent_note:'अचानक दृष्टि हानि, चमक, अंधेरा पर्दा, या गंभीर आंख दर्द के लिए तुरंत वास्तविक देखभाल आवश्यक है, भले ही डेमो परिणाम सामान्य दिखे।',
+  patients_title:'मरीज़', history_title:'जांच इतिहास', filter_grade:'ग्रेड द्वारा फ़िल्टर करें', search:'मरीज़ कोड खोजें',
+  all_grades:'सभी ग्रेड', last_result:'अंतिम परिणाम',
+  report_title:'डेमो जांच रिपोर्ट', screening_id:'जांच आईडी', model_version:'मॉडल संस्करण',
+  print_report:'प्रिंट / डाउनलोड', model_ver_demo:'demo-mock-v0',
+  voice_title:'वॉइस सहायक', voice_sub:'अपनी भाषा में नेत्रसेतु से इस डेमो के बारे में पूछें।',
+  voice_start:'जांच शुरू करें', voice_explain:'परिणाम समझाएं', voice_read:'परिणाम पढ़ें',
+  voice_lang:'भाषा बदलें', voice_dash:'डैशबोर्ड पर जाएं', voice_photo:'फोटो गाइड पर जाएं', voice_disc:'अस्वीकरण पर जाएं',
+  voice_what_is_dr:'डायबिटिक रेटिनोपैथी क्या है?', voice_how_upload:'फोटो कैसे अपलोड करें',
+  voice_listen:'माइक टैप करें और बोलें, या एक सुझाव टैप करें', mic_not_supported:'यहाँ वॉइस इनपुट समर्थित नहीं है। आप फिर भी बटन टैप कर सकते हैं।',
+  play:'चलाएं', pause:'रोकें', stop:'बंद करें', replay:'फिर सुनें',
+  voice_unsafe:'मैं केवल इस जांच वेबसाइट में मदद कर सकता हूँ। कृपया एक योग्य नेत्र चिकित्सक से पूछें।',
+  a11y_title:'सुगमता', text_size:'टेक्स्ट आकार', high_contrast:'उच्च कंट्रास्ट', voice_guidance:'वॉइस मार्गदर्शन चालू/बंद', language:'भाषा',
+  photo_guide_title:'फोटो गाइड', settings_title:'सेटिंग्स', about_prototype:'इस प्रोटोटाइप के बारे में',
+  how_it_works_title:'यह कैसे काम करता है',
+  disclaimer_title:'चिकित्सा अस्वीकरण',
+  small:'छोटा', normal:'सामान्य', large:'बड़ा',
+  demo_mode:'डेमो मोड', role:'भूमिका',
+},
+te: {
+  brand:'Retinova', tagline:'మెరుగైన స్క్రీనింగ్. మెరుగైన దృష్టి.', subtitle:'కంటి సంరక్షణకు వారధి',
+  nav_dashboard:'డాష్‌బోర్డ్', nav_new:'కొత్త స్క్రీనింగ్', nav_patients:'రోగులు', nav_history:'చరిత్ర',
+  nav_voice:'వాయిస్ సహాయకుడు', nav_photo:'ఫోటో గైడ్', nav_access:'ప్రాప్యత', nav_disclaimer:'నిరాకరణ',
+  nav_settings:'సెట్టింగ్‌లు', nav_logout:'లాగ్అవుట్',
+  btn_start_demo:'డెమో స్క్రీనింగ్ ప్రారంభించండి', btn_how:'ఇది ఎలా పనిచేస్తుంది', btn_disclaimer:'నిరాకరణ చూడండి',
+  hero_h1:'డయాబెటిక్ రెటినోపతి కోసం AI-సహాయక స్క్రీనింగ్ మద్దతు',
+  hero_sub:'గ్రామీణ మరియు ప్రాథమిక కంటి-సంరక్షణ కార్యకర్తల కోసం రూపొందించబడింది. రెటినా ఫోటోను అప్‌లోడ్ చేయండి, వివరణాత్మక డెమో ఫలితాన్ని చూడండి, మీ భాషలో వినండి.',
+  trust_chip:'డెమో ప్రోటోటైప్ · స్క్రీనింగ్ మద్దతు మాత్రమే',
+  banner_text:'ప్రదర్శన కోసం ప్రోటోటైప్. Retinova ఒక స్క్రీనింగ్-మద్దతు భావన, ఇది వ్యాధిని నిర్ధారించదు.',
+  disclaimer_fixed:'Retinova అనేది AI-సహాయక స్క్రీనింగ్-మద్దతు ప్రోటోటైప్. ఇది అర్హత గల కంటి-వైద్యుని పరీక్ష లేదా నిర్ధారణకు ప్రత్యామ్నాయం కాదు.',
+  demo_badge:'డెమో / అనుకరణ ఫలితం — ఇది నిజమైన వైద్య అంచనా కాదు',
+  login_title:'తిరిగి స్వాగతం', login_sub:'Retinova డెమోలోకి సైన్ ఇన్ చేయండి',
+  email:'ఇమెయిల్', password:'పాస్‌వర్డ్', demo_login:'డెమో లాగిన్', forgot:'పాస్‌వర్డ్ మర్చిపోయారా?',
+  demo_accounts:'డెమో ఖాతాలు', worker:'ఆరోగ్య కార్యకర్త', doctor:'వైద్యుడు', admin:'నిర్వాహకుడు',
+  do_not_upload:'డెమో సైట్ · నిజమైన రోగి గుర్తింపును అప్‌లోడ్ చేయవద్దు',
+  sample_data:'ప్రోటోటైప్ కోసం నమూనా డేటా',
+  total_screenings:'మొత్తం స్క్రీనింగ్‌లు', no_apparent_dr:'స్పష్టమైన DR లేదు', needs_review:'సమీక్ష అవసరం',
+  high_concern:'అధిక ఆందోళన', ungradable_lbl:'గ్రేడ్ చేయలేనిది',
+  new_screening:'కొత్త స్క్రీనింగ్', recent_screenings:'ఇటీవలి స్క్రీనింగ్‌లు',
+  patient_code:'రోగి కోడ్', date:'తేదీ', eye:'కన్ను', result:'ఫలితం', confidence:'నమ్మకం', status:'స్థితి', view:'చూడండి',
+  step_details:'స్క్రీనింగ్ వివరాలు', step_upload:'ఫోటో అప్‌లోడ్ చేయండి', step_quality:'నాణ్యత తనిఖీ',
+  age_range:'వయస్సు పరిధి (ఐచ్ఛికం)', gender:'లింగం (ఐచ్ఛికం)', known_diabetes:'తెలిసిన మధుమేహం',
+  yes:'అవును', no:'లేదు', not_sure:'ఖచ్చితంగా తెలియదు', which_eye:'ఏ కన్ను', right:'కుడి', left:'ఎడమ', both:'రెండూ',
+  consent:'రోగి/సంరక్షకుడు డెమో స్క్రీనింగ్ కోసం ఈ ఫోటోను ఉపయోగించడానికి అంగీకరించారు.',
+  continue:'కొనసాగించండి', back:'వెనుకకు',
+  upload_zone_title:'ఇక్కడ రెటినా ఫోటోను లాగి వదలండి', upload_zone_sub:'JPG లేదా PNG, లేదా క్రింద డెమో చిత్రాన్ని ఎంచుకోండి',
+  browse:'ఫైల్‌లను బ్రౌజ్ చేయండి', use_demo_image:'డెమో చిత్రాన్ని ఉపయోగించండి',
+  photo_tip1:'ఫండస్ / రెటినా ఫోటోను ఉపయోగించండి, సాధారణ సెల్ఫీ కాదు',
+  photo_tip2:'చిత్రం సహేతుకంగా స్పష్టంగా మరియు కేంద్రీకృతంగా ఉండాలి',
+  photo_tip3:'కనురెప్పలు దృశ్యాన్ని కప్పకూడదు',
+  quality_fail_title:'చిత్రం స్పష్టంగా లేదు',
+  quality_fail_sub:'దయచేసి స్పష్టమైన రెటినా ఫోటోను అప్‌లోడ్ చేయండి. స్క్రీనింగ్ గ్రేడ్ చూపబడదు.',
+  retake:'మరో చిత్రాన్ని ఎంచుకోండి', run_analysis:'డెమో విశ్లేషణ నడపండి',
+  analyzing_1:'చిత్రం అందుకోబడింది', analyzing_2:'ప్రీప్రాసెసింగ్', analyzing_3:'డెమో మోడల్ విశ్లేషణ',
+  analyzing_4:'వివరణాత్మక మ్యాప్', analyzing_5:'ఫలితం సిద్ధంగా ఉంది',
+  original_image:'అసలు చిత్రం', heatmap_overlay:'హీట్‌మ్యాప్ ఓవర్‌లే',
+  what_this_means:'దీని అర్థం', what_not_mean:'దీని అర్థం కాదు',
+  not_confirmed_dx:'ధృవీకరించిన నిర్ధారణ కాదు', not_treatment:'చికిత్స ప్రణాళిక కాదు',
+  not_full_exam:'పూర్తి కంటి పరీక్ష కాదు', heatmap_not_proof:'హీట్‌మ్యాప్ వ్యాధికి రుజువు కాదు',
+  legend_low:'తక్కువ ప్రభావం', legend_med:'మధ్యస్థ ప్రభావం', legend_high:'అధిక ప్రభావం',
+  hear_result:'ఫలితం వినండి', generate_report:'డెమో నివేదిక సృష్టించండి', new_screening_btn:'కొత్త స్క్రీనింగ్',
+  next_step:'తదుపరి అడుగు',
+  heatmap_caption:'హీట్‌మ్యాప్ డెమో మోడల్‌ను ప్రభావితం చేసిన ప్రాంతాలను మాత్రమే చూపుతుంది. ఇది గాయానికి రుజువు కాదు.',
+  dme_note:'ఈ డెమో డయాబెటిక్ మాక్యులర్ ఎడెమాను విడిగా గుర్తించదు.',
+  one_photo_note:'ఒక కంటి ఒక ఫోటో పూర్తి కంటి పరీక్ష కాదు.',
+  urgent_note:'ఆకస్మిక దృష్టి నష్టం, మెరుపులు, చీకటి తెర, లేదా తీవ్రమైన కంటి నొప్పికి తక్షణ నిజమైన సంరక్షణ అవసరం, డెమో ఫలితం సాధారణంగా కనిపించినా సరే.',
+  patients_title:'రోగులు', history_title:'స్క్రీనింగ్ చరిత్ర', filter_grade:'గ్రేడ్ ద్వారా ఫిల్టర్ చేయండి', search:'రోగి కోడ్ శోధించండి',
+  all_grades:'అన్ని గ్రేడ్‌లు', last_result:'చివరి ఫలితం',
+  report_title:'డెమో స్క్రీనింగ్ నివేదిక', screening_id:'స్క్రీనింగ్ ఐడి', model_version:'మోడల్ వెర్షన్',
+  print_report:'ప్రింట్ / డౌన్‌లోడ్', model_ver_demo:'demo-mock-v0',
+  voice_title:'వాయిస్ సహాయకుడు', voice_sub:'మీ భాషలో ఈ డెమో గురించి నేత్రసేతును అడగండి.',
+  voice_start:'స్క్రీనింగ్ ప్రారంభించండి', voice_explain:'ఫలితాన్ని వివరించండి', voice_read:'ఫలితాన్ని చదవండి',
+  voice_lang:'భాష మార్చండి', voice_dash:'డాష్‌బోర్డ్‌కు వెళ్ళండి', voice_photo:'ఫోటో గైడ్‌కు వెళ్ళండి', voice_disc:'నిరాకరణకు వెళ్ళండి',
+  voice_what_is_dr:'డయాబెటిక్ రెటినోపతి అంటే ఏమిటి?', voice_how_upload:'ఫోటోను ఎలా అప్‌లోడ్ చేయాలి',
+  voice_listen:'మైక్ నొక్కి మాట్లాడండి, లేదా సూచనను నొక్కండి', mic_not_supported:'ఇక్కడ వాయిస్ ఇన్‌పుట్ మద్దతు లేదు. మీరు ఇప్పటికీ బటన్లను నొక్కవచ్చు.',
+  play:'ప్లే', pause:'పాజ్', stop:'ఆపు', replay:'మళ్ళీ వినండి',
+  voice_unsafe:'నేను ఈ స్క్రీనింగ్ వెబ్‌సైట్‌తో మాత్రమే సహాయం చేయగలను. దయచేసి అర్హత గల కంటి వైద్యుడిని అడగండి.',
+  a11y_title:'ప్రాప్యత', text_size:'టెక్స్ట్ పరిమాణం', high_contrast:'అధిక కాంట్రాస్ట్', voice_guidance:'వాయిస్ మార్గదర్శకత్వం ఆన్/ఆఫ్', language:'భాష',
+  photo_guide_title:'ఫోటో గైడ్', settings_title:'సెట్టింగ్‌లు', about_prototype:'ఈ ప్రోటోటైప్ గురించి',
+  how_it_works_title:'ఇది ఎలా పనిచేస్తుంది',
+  disclaimer_title:'వైద్య నిరాకరణ',
+  small:'చిన్నది', normal:'సాధారణం', large:'పెద్దది',
+  demo_mode:'డెమో మోడ్', role:'పాత్ర',
+}
+};
+
+const GRADE_INFO = {
+  no_apparent: { color:'none', chip:'status-chip-none', icon:'check-circle',
+    label:{en:'No apparent DR', hi:'कोई स्पष्ट DR नहीं', te:'స్పష్టమైన DR లేదు'},
+    meaning:{en:'The demo model did not highlight signs typically associated with diabetic retinopathy in this image.', hi:'डेमो मॉडल ने इस चित्र में डायबिटिक रेटिनोपैथी से जुड़े सामान्य संकेत नहीं पाए।', te:'ఈ చిత్రంలో డయాబెటిక్ రెటినోపతికి సంబంధించిన సంకేతాలను డెమో మోడల్ గుర్తించలేదు.'},
+    next:{en:'Continue regular diabetes and eye check-up as advised by a doctor. This is not a clearance certificate.', hi:'डॉक्टर की सलाह अनुसार नियमित मधुमेह और नेत्र जांच जारी रखें। यह क्लीयरेंस प्रमाणपत्र नहीं है।', te:'వైద్యుడి సలహా మేరకు క్రమం తప్పకుండా మధుమేహం మరియు కంటి పరీక్షలు కొనసాగించండి. ఇది క్లియరెన్స్ సర్టిఫికేట్ కాదు.'} },
+  mild: { color:'mild', chip:'status-chip-mild', icon:'alert-circle',
+    label:{en:'Mild NPDR (early changes)', hi:'हल्का NPDR (प्रारंभिक बदलाव)', te:'తేలికపాటి NPDR (ప్రారంభ మార్పులు)'},
+    meaning:{en:'The demo model highlighted a few small early-stage changes in the image.', hi:'डेमो मॉडल ने चित्र में कुछ छोटे प्रारंभिक बदलाव चिह्नित किए।', te:'చిత్రంలో కొన్ని చిన్న ప్రారంభ దశ మార్పులను డెమో మోడల్ గుర్తించింది.'},
+    next:{en:'Continue regular diabetes and eye check-up as advised by a doctor. This is not a clearance certificate.', hi:'डॉक्टर की सलाह अनुसार नियमित मधुमेह और नेत्र जांच जारी रखें। यह क्लीयरेंस प्रमाणपत्र नहीं है।', te:'వైద్యుడి సలహా మేరకు క్రమం తప్పకుండా మధుమేహం మరియు కంటి పరీక్షలు కొనసాగించండి. ఇది క్లియరెన్స్ సర్టిఫికేట్ కాదు.'} },
+  moderate: { color:'moderate', chip:'status-chip-moderate', icon:'alert-triangle',
+    label:{en:'Moderate NPDR', hi:'मध्यम NPDR', te:'మధ్యస్థ NPDR'},
+    meaning:{en:'The demo model highlighted a moderate amount of change in the image that may need specialist review.', hi:'डेमो मॉडल ने चित्र में मध्यम मात्रा में बदलाव चिह्नित किए जिनकी विशेषज्ञ समीक्षा आवश्यक हो सकती है।', te:'నిపుణుల సమీక్ష అవసరమయ్యే మధ్యస్థ మార్పులను డెమో మోడల్ చిత్రంలో గుర్తించింది.'},
+    next:{en:'Please arrange an eye-specialist visit.', hi:'कृपया नेत्र-विशेषज्ञ से मिलने की व्यवस्था करें।', te:'దయచేసి కంటి-నిపుణుడి సందర్శనను ఏర్పాటు చేయండి.'} },
+  severe: { color:'severe', chip:'status-chip-severe', icon:'octagon-alert',
+    label:{en:'Severe NPDR', hi:'गंभीर NPDR', te:'తీవ్రమైన NPDR'},
+    meaning:{en:'The demo model highlighted a large amount of change in the image.', hi:'डेमो मॉडल ने चित्र में बड़ी मात्रा में बदलाव चिह्नित किए।', te:'పెద్ద మొత్తంలో మార్పులను డెమో మోడల్ చిత్రంలో గుర్తించింది.'},
+    next:{en:'Please seek specialist eye care promptly.', hi:'कृपया तुरंत विशेषज्ञ नेत्र देखभाल प्राप्त करें।', te:'దయచేసి వెంటనే నిపుణుల కంటి సంరక్షణను పొందండి.'} },
+  proliferative: { color:'prolif', chip:'status-chip-prolif', icon:'siren',
+    label:{en:'Proliferative DR', hi:'प्रोलिफेरेटिव DR', te:'ప్రొలిఫరేటివ్ DR'},
+    meaning:{en:'The demo model highlighted advanced-stage changes in the image.', hi:'डेमो मॉडल ने चित्र में उन्नत-चरण के बदलाव चिह्नित किए।', te:'అధునాతన దశ మార్పులను డెమో మోడల్ చిత్రంలో గుర్తించింది.'},
+    next:{en:'Please seek specialist eye care promptly.', hi:'कृपया तुरंत विशेषज्ञ नेत्र देखभाल प्राप्त करें।', te:'దయచేసి వెంటనే నిపుణుల కంటి సంరక్షణను పొందండి.'} },
+  ungradable: { color:'ungradable', chip:'status-chip-ungradable', icon:'image-off',
+    label:{en:'Ungradable / image not clear enough', hi:'ग्रेड योग्य नहीं / चित्र स्पष्ट नहीं', te:'గ్రేడ్ చేయలేనిది / చిత్రం స్పష్టంగా లేదు'},
+    meaning:{en:'The demo model could not assess this image with reasonable confidence.', hi:'डेमो मॉडल इस चित्र का उचित विश्वास के साथ आकलन नहीं कर सका।', te:'ఈ చిత్రాన్ని సహేతుకమైన నమ్మకంతో డెమో మోడల్ అంచనా వేయలేకపోయింది.'},
+    next:{en:'Do not use this result. Take a clearer photo or refer to an eye clinic.', hi:'इस परिणाम का उपयोग न करें। स्पष्ट फोटो लें या नेत्र क्लिनिक भेजें।', te:'ఈ ఫలితాన్ని ఉపయోగించవద్దు. స్పష్టమైన ఫోటో తీయండి లేదా కంటి క్లినిక్‌కు రిఫర్ చేయండి.'} },
+};
+
+function t(key){ const lang = STATE.lang; return (T[lang] && T[lang][key]) || T.en[key] || key; }
+function gInfo(grade){ return GRADE_INFO[grade] || GRADE_INFO.ungradable; }
+function gLabel(grade){ return gInfo(grade).label[STATE.lang] || gInfo(grade).label.en; }
+
+// ---------- deterministic hash ----------
+function hashStr(s){ let h=0; for(let i=0;i<s.length;i++){ h = (h*31 + s.charCodeAt(i)) >>> 0; } return h; }
+
+// ---------- demo images (inline SVG, clearly simulated) ----------
+function fundusSVG(grade, seed){
+  const rnd = (n)=> { seed = (seed*9301+49297)%233280; return (seed/233280)*n; };
+  let lesions='';
+  const counts = {no_apparent:0, mild:3, moderate:7, severe:13, proliferative:9, ungradable:2};
+  const n = counts[grade] ?? 3;
+  const colors = grade==='proliferative' ? ['#B91C1C','#7F1D1D'] : ['#DC2626','#F59E0B'];
+  for(let i=0;i<n;i++){
+    const ang = rnd(360); const rad = 60+rnd(95);
+    const cx = 200 + rad*Math.cos(ang*Math.PI/180);
+    const cy = 200 + rad*Math.sin(ang*Math.PI/180);
+    const r = grade==='proliferative' ? 5+rnd(6) : 2.5+rnd(3.5);
+    const c = colors[i%colors.length];
+    lesions += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${c}" opacity="0.85"/>`;
+  }
+  if(grade==='proliferative'){
+    for(let i=0;i<4;i++){
+      const ang = rnd(360); const rad=100+rnd(50);
+      const x1=200+70*Math.cos(ang*Math.PI/180), y1=200+70*Math.sin(ang*Math.PI/180);
+      const x2=200+rad*Math.cos((ang+18)*Math.PI/180), y2=200+rad*Math.sin((ang+18)*Math.PI/180);
+      lesions += `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} Q${(200+rad*0.6*Math.cos((ang+9)*Math.PI/180)).toFixed(1)},${(200+rad*0.6*Math.sin((ang+9)*Math.PI/180)).toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}" stroke="#7F1D1D" stroke-width="2.4" fill="none" opacity="0.8"/>`;
+    }
+  }
+  const blur = grade==='ungradable' ? 'filter="url(#blurf)"' : '';
+  return `
+  <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Simulated demo fundus image, not a real patient photograph">
+    <defs>
+      <radialGradient id="fbg-${grade}" cx="50%" cy="50%" r="65%">
+        <stop offset="0%" stop-color="#F5A25D"/><stop offset="55%" stop-color="#D9713C"/><stop offset="100%" stop-color="#7A3418"/>
+      </radialGradient>
+      <filter id="blurf"><feGaussianBlur stdDeviation="6"/></filter>
+    </defs>
+    <circle cx="200" cy="200" r="196" fill="url(#fbg-${grade})"/>
+    <g ${blur}>
+      <circle cx="200" cy="200" r="34" fill="#F7C98A" opacity="0.9"/>
+      <circle cx="200" cy="200" r="14" fill="#FBE3B8"/>
+      <path d="M200,200 C170,140 120,120 60,118" stroke="#8E2A14" stroke-width="5" fill="none" opacity="0.75"/>
+      <path d="M200,200 C230,150 280,130 340,140" stroke="#8E2A14" stroke-width="5" fill="none" opacity="0.75"/>
+      <path d="M200,200 C165,255 130,290 80,320" stroke="#7A2210" stroke-width="4.5" fill="none" opacity="0.7"/>
+      <path d="M200,200 C240,260 285,285 335,300" stroke="#7A2210" stroke-width="4.5" fill="none" opacity="0.7"/>
+      <path d="M200,200 C190,150 175,110 165,60" stroke="#8E2A14" stroke-width="3.5" fill="none" opacity="0.6"/>
+      <path d="M200,200 C215,255 230,300 245,350" stroke="#7A2210" stroke-width="3.5" fill="none" opacity="0.6"/>
+      ${lesions}
+    </g>
+    <circle cx="200" cy="200" r="196" fill="none" stroke="#5A2410" stroke-width="4" opacity="0.5"/>
+  </svg>`;
+}
+function heatmapSVG(grade, seed){
+  const rnd = (n)=> { seed=(seed*9301+49297)%233280; return (seed/233280)*n; };
+  const spots = {no_apparent:1, mild:2, moderate:4, severe:6, proliferative:5, ungradable:1};
+  const n = spots[grade] ?? 2;
+  let blobs='';
+  for(let i=0;i<n;i++){
+    const ang=rnd(360), rad=50+rnd(100);
+    const cx=200+rad*Math.cos(ang*Math.PI/180), cy=200+rad*Math.sin(ang*Math.PI/180);
+    const r = 22+rnd(30);
+    const heat = grade==='severe'||grade==='proliferative' ? '#EF4444' : (grade==='moderate' ? '#F59E0B' : '#FBBF24');
+    blobs += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${heat}" opacity="0.55" filter="url(#soft)"/>`;
+  }
+  return `
+  <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Simulated demo heatmap overlay">
+    <defs><filter id="soft"><feGaussianBlur stdDeviation="14"/></filter></defs>
+    ${blobs}
+  </svg>`;
+}
+
+// ---------- mock AI service ----------
+function mockScreening(imageKey, fixedGrade){
+  const h = hashStr(imageKey);
+  const grade = fixedGrade || GRADES[h % (GRADES.length-1)]; // exclude ungradable from pure-hash unless fixed
+  const confidence = grade==='ungradable' ? (40 + (h%15)) : (68 + (h%29));
+  return {
+    screening_result: grade,
+    confidence: confidence,
+    model_version: 'demo-mock-v0',
+    explanation_svg: heatmapSVG(grade, h%1000),
+    original_svg: fundusSVG(grade, h%1000),
+    is_demo: true,
+    next_step: GRADE_INFO[grade].next,
+    simple_explanation: GRADE_INFO[grade].meaning,
+  };
+}
+
+const DEMO_IMAGES = [
+  {key:'demo-no-apparent', grade:'no_apparent'},
+  {key:'demo-mild', grade:'mild'},
+  {key:'demo-moderate', grade:'moderate'},
+  {key:'demo-severe', grade:'severe'},
+  {key:'demo-proliferative', grade:'proliferative'},
+  {key:'demo-blurry', grade:'ungradable', blurryGate:true},
+];
+
+// ---------- seed data ----------
+function seedScreenings(){
+  const eyes=['right','left'];
+  const arr=[];
+  const grades=['no_apparent','no_apparent','mild','moderate','no_apparent','severe','mild','proliferative','ungradable','moderate'];
+  for(let i=0;i<10;i++){
+    const grade = grades[i];
+    const h = hashStr('seed-'+i+grade);
+    arr.push({
+      id: 'scr_'+(1000+i),
+      patientCode: 'NS-2026-'+(120+i*3),
+      date: new Date(Date.now() - i*86400000*1.6).toISOString().slice(0,10),
+      eye: eyes[i%2],
+      grade: grade,
+      confidence: grade==='ungradable' ? 44 : (66+(h%30)),
+      status: grade==='no_apparent' ? 'Reviewed' : (grade==='ungradable' ? 'Retake needed' : 'Needs review'),
+      seed: h%1000,
+    });
+  }
+  return arr;
+}
+
+const STATE = {
+  user: null, // {email, role}
+  lang: 'en',
+  route: '#/',
+  screenings: seedScreenings(),
+  wizard: { step:1, patientCode:'', ageRange:'', gender:'', diabetes:'not_sure', eyeSel:'right', consent:false,
+            imageKey:null, imageGrade:null, isBlurryGate:false, customName:null },
+  currentResult: null, // filled after analysis
+  a11y: { fontSize:'normal', highContrast:false, voiceGuidance:true },
+  voice: { speaking:false, lastUtterance:null },
+};
+
+function patientCodeGen(){
+  const n = 100 + Math.floor(Math.random()*899);
+  return 'NS-2026-'+n;
+}
+
+// ---------- routing ----------
+const PUBLIC_ROUTES = ['#/','#/how-it-works','#/disclaimer','#/login'];
+function navigate(hash){ window.location.hash = hash; }
+window.addEventListener('hashchange', render);
+window.addEventListener('DOMContentLoaded', ()=>{ if(!window.location.hash) window.location.hash = '#/'; render(); });
+
+function currentRoute(){ return window.location.hash || '#/'; }
+function routeParts(){ return currentRoute().replace(/^#\//,'').split('/').filter(Boolean); }
+
+function requireAuth(){
+  if(!STATE.user){ navigate('#/login'); return false; }
+  return true;
+}
+
+// ---------- small UI helpers ----------
+function icon(name, cls){ return `<i data-lucide="${name}" class="${cls||''}"></i>`; }
+function Chip(text, cls){ return `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${cls}">${text}</span>`; }
+
+function DemoBanner(){
+  return `<div class="no-print bg-ns-violet-800 text-white text-xs sm:text-sm text-center py-2 px-3 leading-snug">
+    ${icon('info', 'inline w-3.5 h-3.5 -mt-0.5 mr-1')}${t('banner_text')}
+  </div>`;
+}
+
+function LangSwitcher(cls){
+  const langs = [['en','English'],['hi','हिन्दी'],['te','తెలుగు']];
+  return `<div class="flex items-center gap-1 ${cls||''}">
+    ${langs.map(([code,label])=>`<button onclick="App.setLang('${code}')" class="px-2.5 py-1.5 rounded-lg text-xs font-medium transition ${STATE.lang===code?'bg-white text-ns-violet-700 shadow':'text-white/80 hover:bg-white/10'}">${label}</button>`).join('')}
+  </div>`;
+}
+
+function StatusChip(grade){
+  const g = gInfo(grade);
+  return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${g.chip}">${icon(g.icon,'w-3.5 h-3.5')}${gLabel(grade)}</span>`;
+}
+
+function GradeBadge(grade){
+  const g = gInfo(grade);
+  const bg = {none:'bg-emerald-50 border-emerald-300 text-emerald-800', mild:'bg-yellow-50 border-yellow-300 text-yellow-900',
+    moderate:'bg-orange-50 border-orange-300 text-orange-900', severe:'bg-red-50 border-red-300 text-red-800',
+    prolif:'bg-red-100 border-red-400 text-red-900', ungradable:'bg-stone-100 border-stone-300 text-stone-700'}[g.color];
+  return `<div class="inline-flex items-center gap-2 px-4 py-2 rounded-xl2 border ${bg} font-display font-semibold">
+    ${icon(g.icon,'w-5 h-5')}<span>${gLabel(grade)}</span></div>`;
+}
+
+// ===================== PUBLIC PAGES =====================
+
+function PublicNav(){
+  return `<nav class="no-print flex items-center justify-between px-5 sm:px-8 py-4 relative z-10">
+    <a href="#/" class="flex items-center gap-2.5 text-white">
+      <span class="w-9 h-9 rounded-xl bg-white/15 grid place-items-center backdrop-blur">${icon('eye','w-5 h-5')}</span>
+      <span class="font-display font-bold text-lg tracking-tight">${t('brand')}</span>
+    </a>
+    <div class="hidden sm:flex items-center gap-6 text-sm text-white/90">
+      <a href="#/how-it-works" class="hover:text-white transition">${t('btn_how')}</a>
+      <a href="#/disclaimer" class="hover:text-white transition">${t('btn_disclaimer')}</a>
+      ${LangSwitcher()}
+      <a href="#/login" class="px-4 py-2 rounded-lg bg-white/95 text-ns-violet-700 font-semibold hover:bg-white transition">${t('demo_login')}</a>
+    </div>
+    <a href="#/login" class="sm:hidden px-3 py-1.5 rounded-lg bg-white/95 text-ns-violet-700 text-sm font-semibold">${t('demo_login')}</a>
+  </nav>`;
+}
+
+function Orbs(){
+  return `<div class="orb orb-anim w-72 h-72 bg-cyan-300 -top-10 -left-10"></div>
+  <div class="orb orb-anim w-96 h-96 bg-fuchsia-300 top-1/3 -right-24" style="animation-delay:-6s"></div>
+  <div class="orb orb-anim w-64 h-64 bg-violet-300 bottom-0 left-1/4" style="animation-delay:-11s"></div>`;
+}
+
+function EyeArt(){
+  return `<svg viewBox="0 0 500 500" class="absolute right-0 top-0 w-[60%] max-w-md opacity-20 pointer-events-none hidden md:block" aria-hidden="true">
+    <circle cx="250" cy="250" r="230" fill="none" stroke="white" stroke-width="2"/>
+    <path d="M40,250 Q250,80 460,250 Q250,420 40,250 Z" fill="none" stroke="white" stroke-width="2.5"/>
+    <circle cx="250" cy="250" r="95" fill="none" stroke="white" stroke-width="2.5"/>
+    <circle cx="250" cy="250" r="45" fill="white" opacity="0.55"/>
+  </svg>`;
+}
+
+function Landing(){
+  const steps = [
+    ['upload','1',t('step_upload')],
+    ['scan-line','2', {en:'Quality check',hi:'गुणवत्ता जांच',te:'నాణ్యత తనిఖీ'}[STATE.lang]],
+    ['brain-circuit','3', {en:'Demo AI screen',hi:'डेमो AI जांच',te:'డెమో AI స్క్రీన్'}[STATE.lang]],
+    ['flame','4', {en:'Heatmap',hi:'हीटमैप',te:'హీట్‌మ్యాప్'}[STATE.lang]],
+    ['volume-2','5', {en:'Voice explanation',hi:'वॉइस स्पष्टीकरण',te:'వాయిస్ వివరణ'}[STATE.lang]],
+    ['stethoscope','6', {en:'Professional follow-up if needed',hi:'आवश्यकता होने पर विशेषज्ञ अनुवर्ती',te:'అవసరమైతే నిపుణుల ఫాలో-అప్'}[STATE.lang]],
+  ];
+  const trust = [
+    ['sparkles', {en:'AI-assisted screen',hi:'AI-सहायता प्राप्त जांच',te:'AI-సహాయక స్క్రీన్'}[STATE.lang]],
+    ['eye', {en:'Explainable view',hi:'व्याख्यात्मक दृश्य',te:'వివరణాత్మక వీక్షణ'}[STATE.lang]],
+    ['mic', t('voice_title')],
+    ['tractor', {en:'Rural-friendly',hi:'ग्रामीण-अनुकूल',te:'గ్రామీణ-స్నేహపూర్వక'}[STATE.lang]],
+    ['route', t('next_step')],
+    ['flask-conical', t('sample_data').split(' ')[0]+' '+ {en:'prototype',hi:'प्रोटोटाइप',te:'ప్రోటోటైప్'}[STATE.lang]],
+  ];
+  return `
+  <div class="hero-gradient relative overflow-hidden">
+    ${Orbs()}${EyeArt()}
+    ${PublicNav()}
+    <div class="relative z-10 px-5 sm:px-8 pt-10 pb-20 max-w-3xl">
+      ${Chip(t('trust_chip'),'demo-chip bg-white/90')}
+      <h1 class="font-display font-extrabold text-white text-4xl sm:text-5xl mt-5 leading-tight">${t('brand')}</h1>
+      <p class="text-cyan-100 font-display font-semibold text-xl sm:text-2xl mt-1">${t('tagline')}</p>
+      <p class="text-white/90 mt-5 text-base sm:text-lg max-w-xl">${t('hero_sub')}</p>
+      <div class="flex flex-wrap gap-3 mt-8">
+        <a href="#/login" class="grad-btn text-white font-semibold px-6 py-3.5 rounded-xl2 shadow-soft transition">${t('btn_start_demo')}</a>
+        <a href="#/how-it-works" class="bg-white/10 border border-white/40 text-white font-semibold px-6 py-3.5 rounded-xl2 hover:bg-white/20 transition backdrop-blur">${t('btn_how')}</a>
+        <a href="#/disclaimer" class="text-white/85 font-medium px-4 py-3.5 hover:text-white transition">${t('btn_disclaimer')} →</a>
+      </div>
+    </div>
+    <div class="relative z-10 px-5 sm:px-8 pb-16">
+      <div class="glass-card rounded-xl2 p-5 shadow-soft max-w-4xl">
+        <div class="flex flex-wrap items-center gap-3 justify-between">
+          ${steps.map(([ic,n,label])=>`<div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-full bg-ns-violet-50 text-ns-violet-700 grid place-items-center font-display font-bold">${n}</div>
+            <div class="text-sm font-medium text-ns-ink/80 max-w-[7rem]">${label}</div>
+          </div>`).join(`<div class="hidden md:block text-ns-violet-200">${icon('chevron-right','w-5 h-5')}</div>`)}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="px-5 sm:px-8 py-14 max-w-6xl mx-auto">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      ${trust.map(([ic,label])=>`<div class="card-hover flex items-center gap-3 p-4 rounded-xl2 border border-ns-violet-100 bg-ns-violet-50/40">
+        <div class="w-11 h-11 rounded-xl bg-white text-ns-cyan-600 grid place-items-center shadow-sm">${icon(ic,'w-5 h-5')}</div>
+        <div class="font-medium text-ns-ink">${label}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <div class="px-5 sm:px-8 pb-16 max-w-6xl mx-auto">
+    <div class="rounded-xl2 bg-gradient-to-br from-ns-violet-800 to-ns-cyan-700 text-white p-7 sm:p-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+      <div>
+        <h2 class="font-display font-bold text-2xl">${t('btn_start_demo')}</h2>
+        <p class="text-white/85 mt-1.5 max-w-md">${t('demo_badge')}</p>
+      </div>
+      <a href="#/login" class="grad-btn font-semibold px-6 py-3 rounded-xl2 shrink-0">${t('btn_start_demo')}</a>
+    </div>
+  </div>
+  ${Footer()}
+  `;
+}
+
+function Footer(){
+  return `<footer class="no-print border-t border-ns-violet-100 px-5 sm:px-8 py-8 text-sm text-ns-ink/60 flex flex-col sm:flex-row items-center justify-between gap-3 max-w-6xl mx-auto">
+    <div class="flex items-center gap-2"><span class="font-display font-semibold text-ns-ink/80">${t('brand')}</span> · ${{en:'Smart India Hackathon 2026 prototype',hi:'स्मार्ट इंडिया हैकाथॉन 2026 प्रोटोटाइप',te:'స్మార్ట్ ఇండియా హ్యాకథాన్ 2026 ప్రోటోటైప్'}[STATE.lang]}</div>
+    <div class="flex items-center gap-4">
+      <a href="#/disclaimer" class="hover:text-ns-violet-700">${t('nav_disclaimer')}</a>
+      <span>${{en:'Regular screening · Early check · See an eye doctor when needed',hi:'नियमित जांच · जल्दी जांच · आवश्यकता होने पर नेत्र चिकित्सक से मिलें',te:'క్రమం తప్పకుండా స్క్రీనింగ్ · ముందస్తు తనిఖీ · అవసరమైతే కంటి వైద్యుడిని కలవండి'}[STATE.lang]}</span>
+    </div>
+  </footer>`;
+}
+
+function HowItWorks(){
+  const items = [
+    ['upload', {en:'Upload a retinal photo',hi:'रेटिना फोटो अपलोड करें',te:'రెటినా ఫోటోను అప్‌లోడ్ చేయండి'}[STATE.lang], {en:'Take or choose a fundus photo of one eye. A demo image is available if you don\u2019t have a camera on hand.',hi:'एक आंख की फंडस फोटो लें या चुनें। यदि कैमरा उपलब्ध नहीं है तो डेमो चित्र उपयोग करें।',te:'ఒక కంటి ఫండస్ ఫోటోను తీయండి లేదా ఎంచుకోండి. కెమెరా అందుబాటులో లేకపోతే డెమో చిత్రాన్ని ఉపయోగించండి.'}[STATE.lang]],
+    ['scan-line', t('step_quality'), {en:'A basic check confirms the file opened correctly and is reasonably clear before analysis.',hi:'विश्लेषण से पहले एक बुनियादी जांच पुष्टि करती है कि फाइल सही से खुली और उचित रूप से स्पष्ट है।',te:'విశ్లేషణకు ముందు ఫైల్ సరిగ్గా తెరుచుకుందని మరియు తగినంత స్పష్టంగా ఉందని ఒక ప్రాథమిక తనిఖీ నిర్ధారిస్తుంది.'}[STATE.lang]],
+    ['brain-circuit', {en:'Demo AI screening',hi:'डेमो AI जांच',te:'డెమో AI స్క్రీనింగ్'}[STATE.lang], {en:'A mock model returns a simulated screening grade — clearly labelled as demo output, not a real prediction.',hi:'एक मॉक मॉडल अनुरूपित जांच ग्रेड लौटाता है — स्पष्ट रूप से डेमो आउटपुट के रूप में चिह्नित, वास्तविक भविष्यवाणी नहीं।',te:'ఒక మాక్ మోడల్ అనుకరణ స్క్రీనింగ్ గ్రేడ్‌ను అందిస్తుంది — నిజమైన అంచనా కాదు, డెమో అవుట్‌పుట్‌గా స్పష్టంగా గుర్తించబడింది.'}[STATE.lang]],
+    ['flame', {en:'Explainable heatmap',hi:'व्याख्यात्मक हीटमैप',te:'వివరణాత్మక హీట్‌మ్యాప్'}[STATE.lang], t('heatmap_caption')],
+    ['volume-2', t('voice_title'), {en:'The result is read aloud in English, Hindi, or Telugu, in plain language.',hi:'परिणाम अंग्रेजी, हिंदी या तेलुगु में सरल भाषा में सुनाया जाता है।',te:'ఫలితం ఆంగ్లం, హిందీ లేదా తెలుగులో సరళమైన భాషలో చదివి వినిపించబడుతుంది.'}[STATE.lang]],
+    ['stethoscope', t('next_step'), {en:'A clear next step is shown: routine check, retake photo, or see an eye doctor.',hi:'एक स्पष्ट अगला कदम दिखाया जाता है: नियमित जांच, फोटो फिर से लें, या नेत्र चिकित्सक से मिलें।',te:'స్పష్టమైన తదుపరి అడుగు చూపబడుతుంది: సాధారణ తనిఖీ, ఫోటో మళ్లీ తీయండి, లేదా కంటి వైద్యుడిని కలవండి.'}[STATE.lang]],
+  ];
+  return `<div class="hero-gradient relative overflow-hidden pb-10">${Orbs()}${PublicNav()}
+    <div class="relative z-10 px-5 sm:px-8 pt-4 pb-10">
+      <h1 class="font-display font-extrabold text-white text-3xl sm:text-4xl">${t('how_it_works_title')}</h1>
+      <p class="text-white/85 mt-2 max-w-xl">${t('hero_sub')}</p>
+    </div>
+  </div>
+  <div class="px-5 sm:px-8 py-12 max-w-4xl mx-auto">
+    <ol class="space-y-4">
+      ${items.map(([ic,title,desc],i)=>`<li class="flex gap-4 p-5 rounded-xl2 border border-ns-violet-100 card-hover">
+        <div class="w-11 h-11 shrink-0 rounded-xl bg-ns-violet-800 text-white grid place-items-center font-display font-bold">${i+1}</div>
+        <div><div class="font-display font-semibold text-lg flex items-center gap-2">${icon(ic,'w-5 h-5 text-ns-cyan-600')}${title}</div>
+        <p class="text-ns-ink/70 mt-1">${desc}</p></div>
+      </li>`).join('')}
+    </ol>
+    <div class="mt-8 flex gap-3">
+      <a href="#/login" class="grad-btn text-white font-semibold px-6 py-3 rounded-xl2 shadow-soft">${t('btn_start_demo')}</a>
+      <a href="#/disclaimer" class="border border-ns-violet-200 text-ns-violet-700 font-semibold px-6 py-3 rounded-xl2">${t('btn_disclaimer')}</a>
+    </div>
+  </div>
+  ${Footer()}`;
+}
+
+function DisclaimerPoints(){
+  return [t('heatmap_caption'), t('dme_note'), t('one_photo_note'), t('urgent_note')];
+}
+
+function DisclaimerInner(){
+  return `<div class="p-6 rounded-xl2 border-2 border-ns-violet-200 bg-ns-violet-50/60">
+      <p class="font-display font-semibold text-lg text-ns-violet-900">${t('disclaimer_fixed')}</p>
+    </div>
+    <ul class="mt-6 space-y-3">
+      ${DisclaimerPoints().map(p=>`<li class="flex gap-3 p-4 rounded-xl border border-ns-violet-100"><span class="text-ns-cyan-600 shrink-0">${icon('shield-alert','w-5 h-5')}</span><span class="text-ns-ink/80">${p}</span></li>`).join('')}
+    </ul>
+    <div class="mt-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium flex gap-3">
+      ${icon('siren','w-5 h-5 shrink-0')}<span>${t('urgent_note')}</span>
+    </div>`;
+}
+function Disclaimer(){
+  return `<div class="hero-gradient relative overflow-hidden">${Orbs()}${PublicNav()}
+    <div class="relative z-10 px-5 sm:px-8 pt-4 pb-14">
+      <h1 class="font-display font-extrabold text-white text-3xl sm:text-4xl">${t('disclaimer_title')}</h1>
+    </div>
+  </div>
+  <div class="px-5 sm:px-8 py-12 max-w-3xl mx-auto">
+    <div class="p-6 rounded-xl2 border-2 border-ns-violet-200 bg-ns-violet-50/60">
+      <p class="font-display font-semibold text-lg text-ns-violet-900">${t('disclaimer_fixed')}</p>
+    </div>
+    <ul class="mt-6 space-y-3">
+      ${DisclaimerPoints().map(p=>`<li class="flex gap-3 p-4 rounded-xl border border-ns-violet-100"><span class="text-ns-cyan-600 shrink-0">${icon('shield-alert','w-5 h-5')}</span><span class="text-ns-ink/80">${p}</span></li>`).join('')}
+    </ul>
+    <div class="mt-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm font-medium flex gap-3">
+      ${icon('siren','w-5 h-5 shrink-0')}<span>${t('urgent_note')}</span>
+    </div>
+    <p class="mt-6 text-sm text-ns-ink/60">${{en:'This project is a Smart India Hackathon 2026 prototype for "Explainable AI for Diabetic Retinopathy Screening in Rural India." It is a sample website only — not a real medical device, not a trained diagnostic model, not government-approved, and not affiliated with any hospital.',hi:'यह प्रोजेक्ट "ग्रामीण भारत में डायबिटिक रेटिनोपैथी जांच के लिए व्याख्यात्मक AI" हेतु स्मार्ट इंडिया हैकाथॉन 2026 प्रोटोटाइप है। यह केवल एक नमूना वेबसाइट है — वास्तविक चिकित्सा उपकरण नहीं, प्रशिक्षित निदान मॉडल नहीं, सरकार-अनुमोदित नहीं, और किसी अस्पताल से संबद्ध नहीं है।',te:'ఈ ప్రాజెక్ట్ "గ్రామీణ భారతదేశంలో డయాబెటిక్ రెటినోపతి స్క్రీనింగ్ కోసం వివరణాత్మక AI" కోసం స్మార్ట్ ఇండియా హ్యాకథాన్ 2026 ప్రోటోటైప్. ఇది కేవలం నమూనా వెబ్‌సైట్ మాత్రమే — నిజమైన వైద్య పరికరం కాదు, శిక్షణ పొందిన నిర్ధారణ మోడల్ కాదు, ప్రభుత్వ-ఆమోదం పొందినది కాదు, మరియు ఏ ఆసుపత్రితోనూ అనుబంధం లేదు.'}[STATE.lang]}</p>
+  </div>
+  ${Footer()}`;
+}
+
+function Login(){
+  const accts = [
+    ['worker@netrasetu.demo', t('worker'), 'stethoscope'],
+    ['doctor@netrasetu.demo', t('doctor'), 'user-round'],
+    ['admin@netrasetu.demo', t('admin'), 'shield'],
+  ];
+  return `<div class="hero-gradient min-h-screen relative overflow-hidden">${Orbs()}${EyeArt()}${PublicNav()}
+    <div class="relative z-10 flex justify-center px-5 pb-16 pt-4">
+      <div class="glass-card rounded-xl2 shadow-soft w-full max-w-md p-7 sm:p-8">
+        <div class="flex items-center gap-2.5 mb-1">
+          <span class="w-10 h-10 rounded-xl bg-ns-violet-800 text-white grid place-items-center">${icon('eye','w-5 h-5')}</span>
+          <span class="font-display font-bold text-xl">${t('brand')}</span>
+        </div>
+        <h1 class="font-display font-bold text-2xl mt-4">${t('login_title')}</h1>
+        <p class="text-ns-ink/60 text-sm mt-1">${t('login_sub')}</p>
+        ${Chip(t('do_not_upload'),'demo-chip mt-3')}
+        <form onsubmit="App.login(event)" class="mt-6 space-y-4">
+          <div>
+            <label class="text-sm font-medium text-ns-ink/70" for="loginEmail">${t('email')}</label>
+            <input id="loginEmail" type="email" required value="worker@netrasetu.demo" class="mt-1 w-full px-4 py-3 rounded-xl border border-ns-violet-200 focus:border-ns-cyan-500 outline-none" />
+          </div>
+          <div>
+            <label class="text-sm font-medium text-ns-ink/70" for="loginPass">${t('password')}</label>
+            <div class="relative mt-1">
+              <input id="loginPass" type="password" required value="demo123" class="w-full px-4 py-3 rounded-xl border border-ns-violet-200 focus:border-ns-cyan-500 outline-none pr-11" />
+              <button type="button" onclick="App.togglePw()" class="absolute right-3 top-1/2 -translate-y-1/2 text-ns-ink/50">${icon('eye','w-4.5 h-4.5','pwIcon')}</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-sm">
+            <label class="flex items-center gap-2 text-ns-ink/60"><input type="checkbox" class="rounded"/> ${{en:'Remember me',hi:'मुझे याद रखें',te:'నన్ను గుర్తుంచుకో'}[STATE.lang]}</label>
+            <a href="#" onclick="return false" class="text-ns-violet-700 font-medium">${t('forgot')}</a>
+          </div>
+          <button type="submit" class="grad-btn w-full text-white font-semibold py-3.5 rounded-xl2 shadow-soft">${t('demo_login')}</button>
+        </form>
+        <div class="mt-6 pt-5 border-t border-ns-violet-100">
+          <p class="text-xs font-semibold text-ns-ink/50 uppercase tracking-wide mb-2">${t('demo_accounts')}</p>
+          <div class="space-y-2">
+            ${accts.map(([email,role,ic])=>`<button onclick="App.quickLogin('${email}')" class="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-ns-violet-50 text-left transition">
+              <span class="w-8 h-8 rounded-lg bg-ns-violet-100 text-ns-violet-700 grid place-items-center">${icon(ic,'w-4 h-4')}</span>
+              <span class="text-sm"><span class="font-medium">${role}</span><br/><span class="text-ns-ink/50">${email}</span></span>
+            </button>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ===================== APP SHELL (post-login) =====================
+
+function roleLabel(role){ return {worker:t('worker'), doctor:t('doctor'), admin:t('admin')}[role] || role; }
+
+function SidebarLink(route, ic, label){
+  const active = currentRoute() === route || (route!=='#/dashboard' && currentRoute().startsWith(route));
+  return `<a href="${route}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-white/85 hover:text-white hover:bg-white/5 transition ${active?'nav-active text-white font-medium':''}">
+    ${icon(ic,'w-4.5 h-4.5')}<span class="text-sm">${label}</span>
+  </a>`;
+}
+
+function Sidebar(){
+  return `<aside class="no-print sidebar-grad hidden lg:flex flex-col w-64 shrink-0 min-h-screen sticky top-0 px-4 py-6">
+    <a href="#/dashboard" class="flex items-center gap-2.5 px-2 mb-6">
+      <span class="w-9 h-9 rounded-xl bg-white/15 grid place-items-center">${icon('eye','w-5 h-5 text-white')}</span>
+      <div class="text-white"><div class="font-display font-bold leading-tight">${t('brand')}</div><div class="text-[11px] text-white/60">${t('subtitle')}</div></div>
+    </a>
+    <nav class="flex-1 space-y-1">
+      ${SidebarLink('#/dashboard','layout-dashboard',t('nav_dashboard'))}
+      ${SidebarLink('#/screening/new','scan-line',t('nav_new'))}
+      ${SidebarLink('#/patients','users',t('nav_patients'))}
+      ${SidebarLink('#/history','history',t('nav_history'))}
+      ${SidebarLink('#/voice-assistant','mic',t('nav_voice'))}
+      ${SidebarLink('#/photo-guide','camera',t('nav_photo'))}
+      ${SidebarLink('#/accessibility','accessibility',t('nav_access'))}
+      ${SidebarLink('#/disclaimer','shield-alert',t('nav_disclaimer'))}
+      ${SidebarLink('#/settings','settings',t('nav_settings'))}
+    </nav>
+    <div class="rounded-xl2 bg-gradient-to-br from-white/15 to-white/5 p-4 text-white/90 text-xs mb-3">
+      ${icon('sparkles','w-4 h-4 text-ns-cyan-300 mb-1')}
+      <p class="font-medium">${t('demo_badge')}</p>
+    </div>
+    <button onclick="App.logout()" class="flex items-center gap-3 px-4 py-3 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition">
+      ${icon('log-out','w-4.5 h-4.5')}<span class="text-sm">${t('nav_logout')}</span>
+    </button>
+  </aside>`;
+}
+
+function MobileDrawer(){
+  return `<div id="mobileDrawer" class="no-print fixed inset-0 z-40 hidden">
+    <div class="absolute inset-0 bg-black/40" onclick="App.toggleDrawer(false)"></div>
+    <aside class="absolute left-0 top-0 bottom-0 w-72 sidebar-grad p-5 overflow-y-auto">
+      <div class="flex items-center justify-between mb-5">
+        <span class="font-display font-bold text-white">${t('brand')}</span>
+        <button onclick="App.toggleDrawer(false)" class="text-white/70">${icon('x','w-5 h-5')}</button>
+      </div>
+      <nav class="space-y-1">
+        ${SidebarLink('#/dashboard','layout-dashboard',t('nav_dashboard'))}
+        ${SidebarLink('#/screening/new','scan-line',t('nav_new'))}
+        ${SidebarLink('#/patients','users',t('nav_patients'))}
+        ${SidebarLink('#/history','history',t('nav_history'))}
+        ${SidebarLink('#/voice-assistant','mic',t('nav_voice'))}
+        ${SidebarLink('#/photo-guide','camera',t('nav_photo'))}
+        ${SidebarLink('#/accessibility','accessibility',t('nav_access'))}
+        ${SidebarLink('#/disclaimer','shield-alert',t('nav_disclaimer'))}
+        ${SidebarLink('#/settings','settings',t('nav_settings'))}
+        <button onclick="App.logout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-white/70">
+          ${icon('log-out','w-4.5 h-4.5')}<span class="text-sm">${t('nav_logout')}</span>
+        </button>
+      </nav>
+    </aside>
+  </div>`;
+}
+
+function Topbar(title){
+  return `<header class="no-print sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-ns-violet-100 px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <button onclick="App.toggleDrawer(true)" class="lg:hidden text-ns-violet-700">${icon('menu','w-6 h-6')}</button>
+      <h1 class="font-display font-semibold text-lg sm:text-xl">${title}</h1>
+    </div>
+    <div class="flex items-center gap-2 sm:gap-3">
+      ${Chip(t('demo_mode'),'demo-chip hidden sm:inline-flex')}
+      <div class="hidden sm:block"><div class="flex items-center gap-1 bg-ns-violet-50 rounded-lg p-1">
+        ${['en','hi','te'].map(c=>`<button onclick="App.setLang('${c}')" class="px-2 py-1 rounded-md text-xs font-medium ${STATE.lang===c?'bg-white shadow text-ns-violet-700':'text-ns-ink/50'}">${c.toUpperCase()}</button>`).join('')}
+      </div></div>
+      <button onclick="navigate('#/voice-assistant')" title="${t('nav_voice')}" class="w-9 h-9 rounded-full bg-ns-cyan-50 text-ns-cyan-700 grid place-items-center">${icon('mic','w-4.5 h-4.5')}</button>
+      <div class="hidden sm:flex items-center gap-2 pl-2 border-l border-ns-violet-100">
+        <span class="w-8 h-8 rounded-full bg-ns-violet-800 text-white grid place-items-center text-xs font-semibold">${(STATE.user?.role||'U')[0].toUpperCase()}</span>
+        <span class="text-sm text-ns-ink/70">${STATE.user?roleLabel(STATE.user.role):''}</span>
+      </div>
+    </div>
+  </header>`;
+}
+
+function BottomNav(){
+  const items = [['#/dashboard','layout-dashboard',t('nav_dashboard')],['#/screening/new','scan-line',t('nav_new')],
+    ['#/history','history',t('nav_history')],['#/voice-assistant','mic',t('nav_voice')]];
+  return `<nav class="no-print lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-ns-violet-100 grid grid-cols-4 px-1 py-1.5">
+    ${items.map(([r,ic,label])=>{ const active = currentRoute().startsWith(r) && (r!=='#/dashboard'||currentRoute()==='#/dashboard');
+      return `<a href="${r}" class="flex flex-col items-center gap-0.5 py-1.5 rounded-lg ${active?'text-ns-violet-700':'text-ns-ink/40'}">${icon(ic,'w-5 h-5')}<span class="text-[10px] font-medium">${label}</span></a>`;
+    }).join('')}
+  </nav>`;
+}
+
+function AppShell(title, content){
+  return `<div class="flex ${STATE.a11y.highContrast?'a11y-contrast':''}">
+    ${Sidebar()}${MobileDrawer()}
+    <div class="flex-1 min-w-0">
+      ${Topbar(title)}
+      <div class="px-4 sm:px-6 py-5 pb-24 lg:pb-8 max-w-6xl mx-auto">${DemoBannerSmall()}${content}</div>
+    </div>
+  </div>
+  ${BottomNav()}`;
+}
+function DemoBannerSmall(){
+  return `<div class="no-print mb-4 flex items-start gap-2 bg-ns-cyan-50 border border-ns-cyan-200 text-ns-cyan-900 text-xs sm:text-sm rounded-xl px-4 py-2.5">
+    ${icon('info','w-4 h-4 shrink-0 mt-0.5')}<span>${t('banner_text')}</span>
+  </div>`;
+}
+
+// ===================== DASHBOARD =====================
+
+function StatCard(label, value, ic, colorClasses){
+  return `<div class="card-hover rounded-xl2 border border-ns-violet-100 p-5 ${colorClasses.bg}">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-medium ${colorClasses.text}/70">${label}</span>
+      <span class="w-9 h-9 rounded-lg grid place-items-center ${colorClasses.iconBg}">${icon(ic,'w-4.5 h-4.5 '+colorClasses.iconText)}</span>
+    </div>
+    <div class="font-display font-bold text-3xl mt-3 ${colorClasses.text}">${value}</div>
+  </div>`;
+}
+
+function DonutChart(counts){
+  const total = Object.values(counts).reduce((a,b)=>a+b,0) || 1;
+  const colorMap = {no_apparent:'#15803D',mild:'#CA8A04',moderate:'#EA580C',severe:'#DC2626',proliferative:'#7F1D1D',ungradable:'#78716C'};
+  let acc = 0; const stops=[];
+  GRADES.forEach(g=>{ const v=counts[g]||0; const pct = v/total*100; stops.push(`${colorMap[g]} ${acc}% ${acc+pct}%`); acc+=pct; });
+  return `<div class="flex items-center gap-5">
+    <div class="w-32 h-32 rounded-full shrink-0" style="background:conic-gradient(${stops.join(',')})">
+      <div class="w-full h-full rounded-full grid place-items-center"><div class="w-16 h-16 bg-white rounded-full grid place-items-center font-display font-bold text-sm">${total}</div></div>
+    </div>
+    <div class="space-y-1.5 text-sm">
+      ${GRADES.map(g=>`<div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:${colorMap[g]}"></span><span class="text-ns-ink/70">${gLabel(g)}</span><span class="font-medium">${counts[g]||0}</span></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function WeeklyBarChart(){
+  const days = {en:['M','T','W','T','F','S','S'],hi:['सो','मं','बु','गु','शु','श','र'],te:['సో','మం','బు','గు','శు','శ','ఆ']}[STATE.lang];
+  const vals = [3,5,2,7,4,6,1];
+  const max = Math.max(...vals);
+  return `<div class="flex items-end gap-3 h-32">
+    ${vals.map((v,i)=>`<div class="flex-1 flex flex-col items-center gap-1.5">
+      <div class="w-full rounded-t-lg bg-gradient-to-t from-ns-violet-700 to-ns-cyan-400" style="height:${(v/max*100)}%"></div>
+      <span class="text-[11px] text-ns-ink/50">${days[i]}</span>
+    </div>`).join('')}
+  </div>`;
+}
+
+function Dashboard(){
+  const scr = STATE.screenings;
+  const counts = {}; scr.forEach(s=>counts[s.grade]=(counts[s.grade]||0)+1);
+  const needsReview = (counts.moderate||0);
+  const highConcern = (counts.severe||0)+(counts.proliferative||0);
+  const content = `
+    <div class="mb-5">
+      <h2 class="font-display font-bold text-xl">${{en:'Welcome back',hi:'वापसी पर स्वागत है',te:'తిరిగి స్వాగతం'}[STATE.lang]}${STATE.user?', '+roleLabel(STATE.user.role):''}</h2>
+      ${Chip(t('sample_data'),'demo-chip')}
+    </div>
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+      ${StatCard(t('total_screenings'), scr.length, 'layers', {bg:'bg-ns-violet-50',text:'text-ns-violet-800',iconBg:'bg-white',iconText:'text-ns-violet-700'})}
+      ${StatCard(t('no_apparent_dr'), counts.no_apparent||0, 'check-circle', {bg:'bg-emerald-50',text:'text-emerald-800',iconBg:'bg-white',iconText:'text-emerald-600'})}
+      ${StatCard(t('needs_review'), needsReview, 'alert-triangle', {bg:'bg-amber-50',text:'text-amber-800',iconBg:'bg-white',iconText:'text-amber-600'})}
+      ${StatCard(t('high_concern'), highConcern, 'octagon-alert', {bg:'bg-red-50',text:'text-red-800',iconBg:'bg-white',iconText:'text-red-600'})}
+      ${StatCard(t('ungradable_lbl'), counts.ungradable||0, 'image-off', {bg:'bg-stone-100',text:'text-stone-700',iconBg:'bg-white',iconText:'text-stone-500'})}
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-5 mb-6">
+      <a href="#/screening/new" class="lg:col-span-1 card-hover rounded-xl2 border-2 border-dashed border-ns-cyan-300 bg-ns-cyan-50/50 p-6 flex flex-col items-center justify-center text-center">
+        <span class="w-12 h-12 rounded-full grad-btn text-white grid place-items-center mb-3">${icon('plus','w-6 h-6')}</span>
+        <div class="font-display font-semibold">${t('new_screening')}</div>
+        <p class="text-xs text-ns-ink/50 mt-1">${t('upload_zone_sub')}</p>
+      </a>
+      <div class="rounded-xl2 border border-ns-violet-100 p-5">
+        <h3 class="font-display font-semibold mb-3 text-sm">${{en:'Result distribution',hi:'परिणाम वितरण',te:'ఫలిత పంపిణీ'}[STATE.lang]} <span class="text-ns-ink/40 font-normal">(${t('sample_data')})</span></h3>
+        ${DonutChart(counts)}
+      </div>
+      <div class="rounded-xl2 border border-ns-violet-100 p-5">
+        <h3 class="font-display font-semibold mb-3 text-sm">${{en:'Weekly activity',hi:'साप्ताहिक गतिविधि',te:'వారపు కార్యకలాపం'}[STATE.lang]} <span class="text-ns-ink/40 font-normal">(${t('sample_data')})</span></h3>
+        ${WeeklyBarChart()}
+      </div>
+    </div>
+
+    <div class="rounded-xl2 border border-ns-violet-100 overflow-hidden">
+      <div class="p-5 pb-3 flex items-center justify-between">
+        <h3 class="font-display font-semibold">${t('recent_screenings')}</h3>
+        <a href="#/history" class="text-sm text-ns-violet-700 font-medium">${{en:'View all',hi:'सभी देखें',te:'అన్నీ చూడండి'}[STATE.lang]} →</a>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead><tr class="text-left text-ns-ink/50 border-y border-ns-violet-100">
+            <th class="py-2.5 px-5 font-medium">${t('patient_code')}</th><th class="font-medium">${t('date')}</th>
+            <th class="font-medium">${t('eye')}</th><th class="font-medium">${t('result')}</th>
+            <th class="font-medium">${t('confidence')}</th><th class="font-medium">${t('status')}</th><th class="font-medium px-5"></th>
+          </tr></thead>
+          <tbody>
+          ${scr.slice(0,6).map(s=>`<tr class="border-b border-ns-violet-50 hover:bg-ns-violet-50/40">
+            <td class="py-3 px-5 font-medium">${s.patientCode}</td><td class="text-ns-ink/60">${s.date}</td>
+            <td class="text-ns-ink/60 capitalize">${t(s.eye)||s.eye}</td><td>${StatusChip(s.grade)}</td>
+            <td class="text-ns-ink/60">${s.confidence}%</td><td class="text-ns-ink/60">${s.status}</td>
+            <td class="px-5"><a href="#/screening/result/${s.id}" class="text-ns-violet-700 font-medium">${t('view')}</a></td>
+          </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  return AppShell(t('nav_dashboard'), content);
+}
+
+// ===================== NEW SCREENING WIZARD =====================
+
+function WizardHeader(step){
+  const steps = [t('step_details'), t('step_upload'), t('step_quality')];
+  return `<div class="flex items-center gap-2 mb-6">
+    ${steps.map((s,i)=>`<div class="flex items-center gap-2 ${i>0?'flex-1':''}">
+      ${i>0?`<div class="h-0.5 flex-1 ${step>i?'bg-ns-cyan-500':'bg-ns-violet-100'}"></div>`:''}
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full grid place-items-center text-xs font-bold shrink-0 ${step>i+1?'bg-ns-cyan-500 text-white':step===i+1?'grad-btn text-white':'bg-ns-violet-100 text-ns-violet-400'}">${step>i+1?icon('check','w-4 h-4'):i+1}</div>
+        <span class="text-sm font-medium hidden sm:inline ${step===i+1?'text-ns-ink':'text-ns-ink/40'}">${s}</span>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function ScreeningStep1(){
+  const w = STATE.wizard;
+  return `<div class="max-w-2xl">
+    ${WizardHeader(1)}
+    <div class="rounded-xl2 border border-ns-violet-100 p-6">
+      <h2 class="font-display font-semibold text-lg mb-4">${t('step_details')}</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm font-medium text-ns-ink/70">${t('patient_code')}</label>
+          <div class="flex gap-2 mt-1">
+            <input id="w_patientCode" value="${w.patientCode}" placeholder="NS-2026-128" class="flex-1 px-4 py-3 rounded-xl border border-ns-violet-200 focus:border-ns-cyan-500 outline-none"/>
+            <button onclick="App.genCode()" class="px-4 rounded-xl border border-ns-violet-200 text-ns-violet-700 text-sm font-medium">${{en:'Generate',hi:'बनाएं',te:'సృష్టించు'}[STATE.lang]}</button>
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div><label class="text-sm font-medium text-ns-ink/70">${t('age_range')}</label>
+            <select id="w_age" class="mt-1 w-full px-4 py-3 rounded-xl border border-ns-violet-200 outline-none">
+              <option value="">—</option>
+              ${['<18','18-30','31-45','46-60','60+'].map(o=>`<option ${w.ageRange===o?'selected':''}>${o}</option>`).join('')}
+            </select></div>
+          <div><label class="text-sm font-medium text-ns-ink/70">${t('gender')}</label>
+            <select id="w_gender" class="mt-1 w-full px-4 py-3 rounded-xl border border-ns-violet-200 outline-none">
+              <option value="">—</option>
+              <option ${w.gender==='female'?'selected':''}>${{en:'Female',hi:'महिला',te:'స్త్రీ'}[STATE.lang]}</option>
+              <option ${w.gender==='male'?'selected':''}>${{en:'Male',hi:'पुरुष',te:'పురుషుడు'}[STATE.lang]}</option>
+              <option ${w.gender==='other'?'selected':''}>${{en:'Other',hi:'अन्य',te:'ఇతర'}[STATE.lang]}</option>
+            </select></div>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-ns-ink/70 block mb-1.5">${t('known_diabetes')}</label>
+          <div class="flex gap-2">${['yes','no','not_sure'].map(v=>`<button onclick="App.setWizard('diabetes','${v}')" class="px-4 py-2 rounded-xl text-sm font-medium border ${w.diabetes===v?'bg-ns-violet-800 text-white border-ns-violet-800':'border-ns-violet-200 text-ns-ink/70'}">${t(v)}</button>`).join('')}</div>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-ns-ink/70 block mb-1.5">${t('which_eye')}</label>
+          <div class="flex gap-2">${['right','left','both'].map(v=>`<button onclick="App.setWizard('eyeSel','${v}')" class="px-4 py-2 rounded-xl text-sm font-medium border ${w.eyeSel===v?'bg-ns-violet-800 text-white border-ns-violet-800':'border-ns-violet-200 text-ns-ink/70'}">${t(v)}</button>`).join('')}</div>
+          ${w.eyeSel==='both'?`<p class="text-xs text-ns-cyan-700 mt-2 flex items-center gap-1.5">${icon('info','w-3.5 h-3.5')}${{en:'For this demo, upload one eye at a time — we\u2019ll start with the right eye.',hi:'इस डेमो के लिए, एक बार में एक आंख अपलोड करें — हम दाईं आंख से शुरू करेंगे।',te:'ఈ డెమో కోసం, ఒక్కసారి ఒక కన్ను అప్‌లోడ్ చేయండి — మేము కుడి కంటితో ప్రారంభిస్తాము.'}[STATE.lang]}</p>`:''}
+        </div>
+        <label class="flex items-start gap-3 p-4 rounded-xl bg-ns-violet-50/60 border border-ns-violet-100 cursor-pointer">
+          <input id="w_consent" type="checkbox" ${w.consent?'checked':''} class="mt-0.5 rounded"/>
+          <span class="text-sm text-ns-ink/80">${t('consent')}</span>
+        </label>
+      </div>
+      <div class="flex justify-end mt-6">
+        <button onclick="App.wizardNext1()" class="grad-btn text-white font-semibold px-6 py-3 rounded-xl2">${t('continue')}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function ScreeningStep2(){
+  const w = STATE.wizard;
+  return `<div class="max-w-3xl">
+    ${WizardHeader(2)}
+    <div class="rounded-xl2 border border-ns-violet-100 p-6">
+      <h2 class="font-display font-semibold text-lg mb-4">${t('step_upload')}</h2>
+      <div id="dropzone" ondragover="event.preventDefault(); this.classList.add('border-ns-cyan-500')" ondragleave="this.classList.remove('border-ns-cyan-500')"
+        ondrop="App.handleDrop(event)"
+        class="border-2 border-dashed border-ns-violet-200 rounded-xl2 p-8 text-center transition">
+        <span class="w-14 h-14 rounded-full bg-ns-violet-50 text-ns-violet-700 grid place-items-center mx-auto mb-3">${icon('upload-cloud','w-7 h-7')}</span>
+        <p class="font-medium">${t('upload_zone_title')}</p>
+        <p class="text-sm text-ns-ink/50 mt-1">${t('upload_zone_sub')}</p>
+        <label class="grad-btn inline-block text-white font-semibold px-5 py-2.5 rounded-xl2 mt-4 cursor-pointer">
+          ${t('browse')}<input type="file" accept="image/*" class="hidden" onchange="App.handleFileInput(event)"/>
+        </label>
+      </div>
+
+      ${w.imageKey ? `<div class="mt-5 flex items-center gap-4 p-4 rounded-xl border border-ns-violet-100 fade-in">
+        <div class="w-16 h-16 rounded-lg overflow-hidden border border-ns-violet-100 shrink-0">${fundusSVG(w.imageGrade, hashStr(w.imageKey)%1000)}</div>
+        <div class="flex-1 min-w-0">
+          <p class="font-medium truncate">${w.customName || w.imageKey}</p>
+          <p class="text-xs text-ns-ink/50">${{en:'Ready',hi:'तैयार',te:'సిద్ధం'}[STATE.lang]}</p>
+        </div>
+        <button onclick="App.removeImage()" class="text-ns-ink/40 hover:text-red-600">${icon('trash-2','w-5 h-5')}</button>
+      </div>` : ''}
+
+      <p class="text-xs font-semibold text-ns-ink/50 uppercase tracking-wide mt-6 mb-2">${t('use_demo_image')}</p>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        ${DEMO_IMAGES.map(d=>`<button onclick="App.pickDemoImage('${d.key}','${d.grade}',${!!d.blurryGate})" class="rounded-xl border-2 ${w.imageKey===d.key?'border-ns-cyan-500':'border-ns-violet-100'} overflow-hidden text-left card-hover">
+          <div class="aspect-square">${fundusSVG(d.grade, hashStr(d.key)%1000)}</div>
+          <div class="p-2 text-xs font-medium">${gLabel(d.grade)}${d.blurryGate?` <span class="text-ns-ink/40">(${{en:'blurry',hi:'धुंधला',te:'అస్పష్టం'}[STATE.lang]})</span>`:''}</div>
+        </button>`).join('')}
+      </div>
+      <p class="text-[11px] text-ns-ink/40 mt-2">${{en:'Demo images are computer-generated illustrations for this prototype — not real patient photographs.',hi:'डेमो चित्र इस प्रोटोटाइप के लिए कंप्यूटर-जनित चित्रण हैं — वास्तविक मरीज़ फोटो नहीं।',te:'డెమో చిత్రాలు ఈ ప్రోటోటైప్ కోసం కంప్యూటర్-సృష్టించిన చిత్రణలు — నిజమైన రోగి ఫోటోలు కావు.'}[STATE.lang]}</p>
+
+      <div class="mt-6 rounded-xl bg-ns-violet-50/60 p-4">
+        <p class="text-xs font-semibold text-ns-ink/50 uppercase tracking-wide mb-2">${t('photo_guide_title')}</p>
+        <ul class="text-sm text-ns-ink/70 space-y-1">
+          <li>• ${t('photo_tip1')}</li><li>• ${t('photo_tip2')}</li><li>• ${t('photo_tip3')}</li>
+        </ul>
+      </div>
+
+      <div class="flex justify-between mt-6">
+        <button onclick="App.setWizard('step',1)" class="px-6 py-3 rounded-xl2 border border-ns-violet-200 font-semibold text-ns-ink/70">${t('back')}</button>
+        <button onclick="App.wizardNext2()" ${!w.imageKey?'disabled':''} class="grad-btn text-white font-semibold px-6 py-3 rounded-xl2 disabled:opacity-40">${t('continue')}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function ScreeningStep3(){
+  const w = STATE.wizard;
+  const isFail = w.isBlurryGate;
+  return `<div class="max-w-2xl">
+    ${WizardHeader(3)}
+    <div class="rounded-xl2 border border-ns-violet-100 p-6 text-center">
+      ${isFail ? `
+        <div class="w-16 h-16 rounded-full bg-stone-100 text-stone-500 grid place-items-center mx-auto mb-4">${icon('image-off','w-8 h-8')}</div>
+        <h2 class="font-display font-bold text-xl text-stone-700">${t('quality_fail_title')}</h2>
+        <p class="text-ns-ink/60 mt-2">${t('quality_fail_sub')}</p>
+        <div class="flex justify-center gap-3 mt-6">
+          <button onclick="App.setWizard('step',2)" class="grad-btn text-white font-semibold px-6 py-3 rounded-xl2">${t('retake')}</button>
+        </div>` : `
+        <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 grid place-items-center mx-auto mb-4">${icon('check-circle','w-8 h-8')}</div>
+        <h2 class="font-display font-bold text-xl">${{en:'Quality check passed',hi:'गुणवत्ता जांच सफल',te:'నాణ్యత తనిఖీ ఉత్తీర్ణత'}[STATE.lang]}</h2>
+        <p class="text-ns-ink/60 mt-2">${{en:'File type, size, and resolution look fine for this demo. This is a basic check, not a clinical quality AI.',hi:'इस डेमो के लिए फाइल प्रकार, आकार और रिज़ॉल्यूशन ठीक हैं। यह एक बुनियादी जांच है, नैदानिक गुणवत्ता AI नहीं।',te:'ఈ డెమో కోసం ఫైల్ రకం, పరిమాణం మరియు రిజల్యూషన్ బాగానే ఉన్నాయి. ఇది ప్రాథమిక తనిఖీ, క్లినికల్ నాణ్యత AI కాదు.'}[STATE.lang]}</p>
+        <div class="flex justify-center gap-3 mt-6">
+          <button onclick="App.setWizard('step',2)" class="px-6 py-3 rounded-xl2 border border-ns-violet-200 font-semibold text-ns-ink/70">${t('back')}</button>
+          <button onclick="App.startAnalysis()" class="grad-btn text-white font-semibold px-6 py-3 rounded-xl2">${t('run_analysis')}</button>
+        </div>`}
+    </div>
+  </div>`;
+}
+
+function NewScreeningPage(){
+  const step = STATE.wizard.step;
+  const content = step===1?ScreeningStep1():step===2?ScreeningStep2():ScreeningStep3();
+  return AppShell(t('new_screening'), content);
+}
+
+// ===================== ANALYSIS PAGE =====================
+function AnalysisPage(){
+  const content = `<div class="max-w-lg mx-auto text-center py-10">
+    <div class="relative w-48 h-48 mx-auto rounded-2xl overflow-hidden border-2 border-ns-violet-200 shadow-soft">
+      ${fundusSVG(STATE.wizard.imageGrade, hashStr(STATE.wizard.imageKey||'x')%1000)}
+      <div class="scan-line"></div>
+    </div>
+    <h2 id="analyzeLabel" class="font-display font-semibold text-lg mt-6">${t('analyzing_1')}</h2>
+    <div class="w-full h-2 bg-ns-violet-100 rounded-full mt-4 overflow-hidden"><div id="analyzeBar" class="h-full grad-btn transition-all" style="width:5%"></div></div>
+    <p class="text-xs text-ns-ink/40 mt-4">${t('demo_badge')}</p>
+  </div>`;
+  return AppShell(t('new_screening'), content);
+}
+
+function runAnalysisSequence(){
+  const labels = [t('analyzing_1'),t('analyzing_2'),t('analyzing_3'),t('analyzing_4'),t('analyzing_5')];
+  let i=0;
+  const labelEl = document.getElementById('analyzeLabel');
+  const barEl = document.getElementById('analyzeBar');
+  if(!labelEl) return;
+  const iv = setInterval(()=>{
+    i++;
+    if(i>=labels.length){
+      clearInterval(iv);
+      const w = STATE.wizard;
+      const fixedGrade = DEMO_IMAGES.find(d=>d.key===w.imageKey)?.grade;
+      const result = mockScreening(w.imageKey, w.imageGrade || fixedGrade);
+      const id = 'scr_'+Date.now();
+      const record = { id, patientCode: w.patientCode || patientCodeGen(), date: new Date().toISOString().slice(0,10),
+        eye: w.eyeSel==='both'?'right':w.eyeSel, grade: result.screening_result, confidence: result.confidence,
+        status: result.screening_result==='no_apparent'?'Reviewed':(result.screening_result==='ungradable'?'Retake needed':'Needs review'),
+        seed: hashStr(w.imageKey)%1000, imageKey: w.imageKey };
+      STATE.screenings.unshift(record);
+      STATE.currentResult = record;
+      navigate('#/screening/result/'+id);
+      return;
+    }
+    labelEl.textContent = labels[i];
+    barEl.style.width = (10 + i*22)+'%';
+  }, 620);
+}
+
+// ===================== RESULT PAGE =====================
+function findScreening(id){ return STATE.screenings.find(s=>s.id===id); }
+
+function ResultPage(id){
+  const s = findScreening(id);
+  if(!s) return AppShell(t('result'), `<p>${{en:'Screening not found.',hi:'जांच नहीं मिली।',te:'స్క్రీనింగ్ కనుగొనబడలేదు.'}[STATE.lang]}</p>`);
+  const g = gInfo(s.grade);
+  const meaning = g.meaning[STATE.lang] || g.meaning.en;
+  const next = g.next[STATE.lang] || g.next.en;
+  const content = `
+  <div class="mb-4 flex items-center justify-between flex-wrap gap-2">
+    <div class="flex items-center gap-2">
+      ${Chip(t('demo_badge'),'bg-fuchsia-50 text-fuchsia-800 border border-fuchsia-200')}
+    </div>
+    <div class="text-sm text-ns-ink/50">${s.patientCode} · ${s.date} · <span class="capitalize">${t(s.eye)}</span></div>
+  </div>
+
+  <div class="grid lg:grid-cols-2 gap-5">
+    <div class="rounded-xl2 border border-ns-violet-100 p-5">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-sm font-medium text-ns-ink/60" id="imgLabelOrig">${t('original_image')}</span>
+        <span class="text-sm font-medium text-ns-ink/60" id="imgLabelHeat">${t('heatmap_overlay')}</span>
+      </div>
+      <div class="relative rounded-xl2 overflow-hidden border border-ns-violet-100 aspect-square">
+        <div class="absolute inset-0">${fundusSVG(s.grade, s.seed)}</div>
+        <div id="heatLayer" class="absolute inset-0" style="clip-path: inset(0 0 0 50%)">${fundusSVG(s.grade, s.seed)}${heatmapSVG(s.grade, s.seed)}</div>
+        <div id="sliderHandle" class="absolute top-0 bottom-0" style="left:50%"><div class="w-0.5 h-full bg-white shadow"></div><div class="w-8 h-8 -ml-4 -mt-4 rounded-full bg-white shadow-soft grid place-items-center absolute top-1/2">${icon('move-horizontal','w-4 h-4 text-ns-violet-700')}</div></div>
+      </div>
+      <input type="range" min="0" max="100" value="50" oninput="App.moveSlider(this.value)" class="hm-slider w-full mt-4"/>
+      <p class="text-xs text-ns-ink/50 mt-3">${t('heatmap_caption')}</p>
+      <div class="flex items-center gap-4 mt-3 text-xs">
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-yellow-300"></span>${t('legend_low')}</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>${t('legend_med')}</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>${t('legend_high')}</span>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div class="rounded-xl2 border border-ns-violet-100 p-5">
+        ${GradeBadge(s.grade)}
+        <p class="text-ns-ink/70 mt-3">${meaning}</p>
+        <div class="mt-3 text-sm text-ns-ink/50">${t('confidence')}: <span class="font-semibold text-ns-ink">${s.confidence}%</span> <span class="text-xs">(${t('sample_data')})</span></div>
+        <div class="mt-4 p-3.5 rounded-xl bg-ns-violet-50/70 border border-ns-violet-100">
+          <p class="text-xs font-semibold text-ns-violet-700 uppercase tracking-wide mb-1">${t('next_step')}</p>
+          <p class="text-sm text-ns-ink/80">${next}</p>
+        </div>
+        <div class="flex flex-wrap gap-2 mt-4">
+          <button onclick="App.hearResult('${s.id}')" class="flex items-center gap-2 grad-btn text-white font-semibold px-4 py-2.5 rounded-xl2 text-sm">${icon('volume-2','w-4 h-4')}${t('hear_result')}</button>
+          <a href="#/reports/${s.id}" class="flex items-center gap-2 border border-ns-violet-200 text-ns-violet-700 font-semibold px-4 py-2.5 rounded-xl2 text-sm">${icon('file-text','w-4 h-4')}${t('generate_report')}</a>
+          <a href="#/screening/new" onclick="App.resetWizard()" class="flex items-center gap-2 border border-ns-violet-200 text-ns-ink/70 font-semibold px-4 py-2.5 rounded-xl2 text-sm">${icon('plus','w-4 h-4')}${t('new_screening_btn')}</a>
+        </div>
+      </div>
+
+      <div class="rounded-xl2 border border-ns-violet-100 p-5">
+        <p class="text-sm font-semibold mb-2">${t('what_this_means')}</p>
+        <p class="text-sm text-ns-ink/70 mb-3">${meaning}</p>
+        <p class="text-sm font-semibold mb-2">${t('what_not_mean')}</p>
+        <ul class="text-sm text-ns-ink/70 space-y-1.5">
+          <li class="flex gap-2">${icon('x','w-4 h-4 text-red-400 shrink-0 mt-0.5')}${t('not_confirmed_dx')}</li>
+          <li class="flex gap-2">${icon('x','w-4 h-4 text-red-400 shrink-0 mt-0.5')}${t('not_treatment')}</li>
+          <li class="flex gap-2">${icon('x','w-4 h-4 text-red-400 shrink-0 mt-0.5')}${t('not_full_exam')}</li>
+          <li class="flex gap-2">${icon('x','w-4 h-4 text-red-400 shrink-0 mt-0.5')}${t('heatmap_not_proof')}</li>
+        </ul>
+      </div>
+
+      <div class="rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs p-3.5 flex gap-2.5">
+        ${icon('siren','w-4 h-4 shrink-0 mt-0.5')}<span>${t('urgent_note')}</span>
+      </div>
+      <p class="text-xs text-ns-ink/50 px-1">${t('disclaimer_fixed')}</p>
+    </div>
+  </div>`;
+  return AppShell(t('result'), content);
+}
+
+// ===================== REPORT PAGE =====================
+function ReportPage(id){
+  const s = findScreening(id);
+  if(!s) return AppShell(t('report_title'), `<p>${{en:'Not found.',hi:'नहीं मिला।',te:'కనుగొనబడలేదు.'}[STATE.lang]}</p>`);
+  const g = gInfo(s.grade);
+  const content = `
+  <div class="flex justify-end mb-3 no-print">
+    <button onclick="window.print()" class="flex items-center gap-2 grad-btn text-white font-semibold px-5 py-2.5 rounded-xl2 text-sm">${icon('printer','w-4 h-4')}${t('print_report')}</button>
+  </div>
+  <div class="rounded-xl2 border border-ns-violet-100 p-6 sm:p-8 bg-white">
+    <div class="flex items-center justify-between border-b border-ns-violet-100 pb-4 mb-5">
+      <div class="flex items-center gap-2.5"><span class="w-9 h-9 rounded-xl bg-ns-violet-800 text-white grid place-items-center">${icon('eye','w-5 h-5')}</span><span class="font-display font-bold">${t('brand')}</span></div>
+      ${Chip(t('demo_badge'),'bg-fuchsia-50 text-fuchsia-800 border border-fuchsia-200')}
+    </div>
+    <h2 class="font-display font-bold text-xl mb-4">${t('report_title')}</h2>
+    <div class="grid sm:grid-cols-2 gap-x-8 gap-y-2 text-sm mb-6">
+      <div><span class="text-ns-ink/50">${t('screening_id')}:</span> <span class="font-medium">${s.id}</span></div>
+      <div><span class="text-ns-ink/50">${t('date')}:</span> <span class="font-medium">${s.date}</span></div>
+      <div><span class="text-ns-ink/50">${t('patient_code')}:</span> <span class="font-medium">${s.patientCode}</span></div>
+      <div><span class="text-ns-ink/50">${t('eye')}:</span> <span class="font-medium capitalize">${t(s.eye)}</span></div>
+      <div><span class="text-ns-ink/50">${t('model_version')}:</span> <span class="font-medium">${t('model_ver_demo')}</span></div>
+      <div><span class="text-ns-ink/50">${t('confidence')}:</span> <span class="font-medium">${s.confidence}%</span></div>
+    </div>
+    <div class="grid sm:grid-cols-2 gap-4 mb-6">
+      <div><p class="text-xs font-semibold text-ns-ink/50 uppercase mb-1.5">${t('original_image')}</p><div class="rounded-xl overflow-hidden border border-ns-violet-100">${fundusSVG(s.grade,s.seed)}</div></div>
+      <div><p class="text-xs font-semibold text-ns-ink/50 uppercase mb-1.5">${t('heatmap_overlay')}</p><div class="rounded-xl overflow-hidden border border-ns-violet-100 relative">${fundusSVG(s.grade,s.seed)}<div class="absolute inset-0">${heatmapSVG(s.grade,s.seed)}</div></div></div>
+    </div>
+    ${GradeBadge(s.grade)}
+    <div class="mt-4 p-4 rounded-xl bg-ns-violet-50/70">
+      <p class="text-xs font-semibold text-ns-violet-700 uppercase mb-1">${t('next_step')}</p>
+      <p class="text-sm">${(g.next[STATE.lang]||g.next.en)}</p>
+    </div>
+    <div class="mt-6 pt-4 border-t border-ns-violet-100 text-xs text-ns-ink/60 space-y-1.5">
+      <p class="font-semibold text-ns-ink/80">${t('disclaimer_fixed')}</p>
+      <p>${t('heatmap_caption')}</p><p>${t('dme_note')}</p><p>${t('one_photo_note')}</p><p class="text-red-700 font-medium">${t('urgent_note')}</p>
+    </div>
+  </div>`;
+  return AppShell(t('report_title'), content);
+}
+
+// ===================== PATIENTS =====================
+function PatientsPage(){
+  const map = {};
+  STATE.screenings.forEach(s=>{ if(!map[s.patientCode] || s.date>map[s.patientCode].date) map[s.patientCode]=s; });
+  const rows = Object.values(map);
+  const content = `
+  <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+    <h2 class="font-display font-semibold text-lg">${t('patients_title')}</h2>
+    <input placeholder="${t('search')}" oninput="App.filterPatients(this.value)" id="patientSearch" class="px-4 py-2.5 rounded-xl border border-ns-violet-200 outline-none text-sm w-56"/>
+  </div>
+  <div class="rounded-xl2 border border-ns-violet-100 overflow-hidden">
+    <table class="w-full text-sm">
+      <thead><tr class="text-left text-ns-ink/50 border-b border-ns-violet-100">
+        <th class="py-2.5 px-5 font-medium">${t('patient_code')}</th><th class="font-medium">${t('age_range')}</th>
+        <th class="font-medium">${t('last_result')}</th><th class="font-medium">${t('date')}</th><th class="font-medium px-5"></th>
+      </tr></thead>
+      <tbody id="patientsBody">
+      ${rows.map(s=>`<tr class="border-b border-ns-violet-50 hover:bg-ns-violet-50/40" data-code="${s.patientCode.toLowerCase()}">
+        <td class="py-3 px-5 font-medium">${s.patientCode}</td><td class="text-ns-ink/50">—</td>
+        <td>${StatusChip(s.grade)}</td><td class="text-ns-ink/60">${s.date}</td>
+        <td class="px-5"><a href="#/screening/result/${s.id}" class="text-ns-violet-700 font-medium">${t('view')}</a></td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+  return AppShell(t('patients_title'), content);
+}
+
+// ===================== HISTORY =====================
+function HistoryPage(){
+  const content = `
+  <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+    <h2 class="font-display font-semibold text-lg">${t('history_title')}</h2>
+    <select onchange="App.filterHistory(this.value)" id="historyFilter" class="px-4 py-2.5 rounded-xl border border-ns-violet-200 outline-none text-sm">
+      <option value="">${t('all_grades')}</option>
+      ${GRADES.map(g=>`<option value="${g}">${gLabel(g)}</option>`).join('')}
+    </select>
+  </div>
+  <div class="rounded-xl2 border border-ns-violet-100 overflow-hidden">
+    <table class="w-full text-sm">
+      <thead><tr class="text-left text-ns-ink/50 border-b border-ns-violet-100">
+        <th class="py-2.5 px-5 font-medium">${t('patient_code')}</th><th class="font-medium">${t('date')}</th>
+        <th class="font-medium">${t('eye')}</th><th class="font-medium">${t('result')}</th>
+        <th class="font-medium">${t('confidence')}</th><th class="font-medium">${t('status')}</th><th class="font-medium px-5"></th>
+      </tr></thead>
+      <tbody id="historyBody">
+      ${STATE.screenings.map(s=>`<tr class="border-b border-ns-violet-50 hover:bg-ns-violet-50/40" data-grade="${s.grade}">
+        <td class="py-3 px-5 font-medium">${s.patientCode}</td><td class="text-ns-ink/60">${s.date}</td>
+        <td class="text-ns-ink/60 capitalize">${t(s.eye)}</td><td>${StatusChip(s.grade)}</td>
+        <td class="text-ns-ink/60">${s.confidence}%</td><td class="text-ns-ink/60">${s.status}</td>
+        <td class="px-5"><a href="#/screening/result/${s.id}" class="text-ns-violet-700 font-medium">${t('view')}</a></td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+  return AppShell(t('history_title'), content);
+}
+
+// ===================== PHOTO GUIDE =====================
+function PhotoGuidePage(){
+  const tips = [
+    ['camera', t('photo_tip1')], ['focus', t('photo_tip2')], ['eye', t('photo_tip3')],
+    ['sun', {en:'Use even, gentle lighting — avoid harsh glare or deep shadows',hi:'समान, हल्की रोशनी का उपयोग करें — तेज़ चमक या गहरी छाया से बचें',te:'సమానమైన, మృదువైన లైటింగ్ ఉపయోగించండి — తీవ్రమైన మెరుపు లేదా లోతైన నీడలను నివారించండి'}[STATE.lang]],
+    ['crop', {en:'Center the optic disc and macula in the frame',hi:'ऑप्टिक डिस्क और मैक्युला को फ्रेम के केंद्र में रखें',te:'ఫ్రేమ్‌లో ఆప్టిక్ డిస్క్ మరియు మాక్యులాను మధ్యలో ఉంచండి'}[STATE.lang]],
+    ['hand', {en:'Hold the device steady to avoid blur',hi:'धुंधलापन से बचने के लिए डिवाइस को स्थिर रखें',te:'అస్పష్టతను నివారించడానికి పరికరాన్ని స్థిరంగా పట్టుకోండి'}[STATE.lang]],
+  ];
+  const content = `<h2 class="font-display font-semibold text-lg mb-4">${t('photo_guide_title')}</h2>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    ${tips.map(([ic,txt])=>`<div class="rounded-xl2 border border-ns-violet-100 p-5 card-hover">
+      <span class="w-11 h-11 rounded-xl bg-ns-cyan-50 text-ns-cyan-700 grid place-items-center mb-3">${icon(ic,'w-5 h-5')}</span>
+      <p class="text-sm text-ns-ink/80">${txt}</p>
+    </div>`).join('')}
+  </div>
+  <div class="mt-5 rounded-xl bg-ns-violet-50/70 p-4 text-sm text-ns-ink/70 flex gap-2.5">
+    ${icon('info','w-4.5 h-4.5 shrink-0 text-ns-violet-600')}<span>${{en:'This demo uses illustrated sample images. On a real device, a proper fundus camera is needed to capture a true retinal photo.',hi:'यह डेमो चित्रित नमूना चित्रों का उपयोग करता है। वास्तविक डिवाइस पर, वास्तविक रेटिना फोटो लेने के लिए उचित फंडस कैमरा आवश्यक है।',te:'ఈ డెమో చిత్రీకరించిన నమూనా చిత్రాలను ఉపయోగిస్తుంది. నిజమైన పరికరంలో, నిజమైన రెటినా ఫోటోను తీయడానికి సరైన ఫండస్ కెమెరా అవసరం.'}[STATE.lang]}</span>
+  </div>`;
+  return AppShell(t('photo_guide_title'), content);
+}
+
+// ===================== ACCESSIBILITY =====================
+function AccessibilityPage(){
+  const a = STATE.a11y;
+  const content = `<h2 class="font-display font-semibold text-lg mb-4">${t('a11y_title')}</h2>
+  <div class="rounded-xl2 border border-ns-violet-100 divide-y divide-ns-violet-100 max-w-xl">
+    <div class="p-5 flex items-center justify-between">
+      <div><p class="font-medium">${t('text_size')}</p></div>
+      <div class="flex gap-1 bg-ns-violet-50 rounded-lg p-1">
+        ${[['small',t('small')],['normal',t('normal')],['large',t('large')]].map(([v,l])=>`<button onclick="App.setFontSize('${v}')" class="px-3 py-1.5 rounded-md text-sm font-medium ${a.fontSize===v?'bg-white shadow text-ns-violet-700':'text-ns-ink/50'}">${l}</button>`).join('')}
+      </div>
+    </div>
+    <div class="p-5 flex items-center justify-between">
+      <p class="font-medium">${t('high_contrast')}</p>
+      <button onclick="App.toggleContrast()" class="w-12 h-7 rounded-full transition ${a.highContrast?'bg-ns-violet-700':'bg-ns-violet-100'} relative"><span class="w-5 h-5 bg-white rounded-full absolute top-1 transition ${a.highContrast?'left-6':'left-1'}"></span></button>
+    </div>
+    <div class="p-5 flex items-center justify-between">
+      <p class="font-medium">${t('voice_guidance')}</p>
+      <button onclick="App.toggleVoiceGuidance()" class="w-12 h-7 rounded-full transition ${a.voiceGuidance?'bg-ns-violet-700':'bg-ns-violet-100'} relative"><span class="w-5 h-5 bg-white rounded-full absolute top-1 transition ${a.voiceGuidance?'left-6':'left-1'}"></span></button>
+    </div>
+    <div class="p-5 flex items-center justify-between">
+      <p class="font-medium">${t('language')}</p>
+      ${LangSwitcher('bg-ns-violet-50 rounded-lg p-1')}
+    </div>
+  </div>`;
+  return AppShell(t('a11y_title'), content);
+}
+
+// ===================== SETTINGS =====================
+function SettingsPage(){
+  const content = `<h2 class="font-display font-semibold text-lg mb-4">${t('settings_title')}</h2>
+  <div class="grid sm:grid-cols-2 gap-5 max-w-3xl">
+    <div class="rounded-xl2 border border-ns-violet-100 p-5">
+      <p class="text-xs font-semibold text-ns-ink/50 uppercase mb-2">${t('language')}</p>
+      ${LangSwitcher('bg-ns-violet-50 rounded-lg p-1 w-max')}
+    </div>
+    <div class="rounded-xl2 border border-ns-violet-100 p-5">
+      <p class="text-xs font-semibold text-ns-ink/50 uppercase mb-2">${t('role')}</p>
+      <p class="font-medium">${STATE.user?roleLabel(STATE.user.role):'—'}</p>
+      <p class="text-xs text-ns-ink/40 mt-1">${STATE.user?.email||''}</p>
+    </div>
+    <div class="rounded-xl2 border border-ns-violet-100 p-5 sm:col-span-2">
+      <p class="text-xs font-semibold text-ns-ink/50 uppercase mb-2">${t('demo_mode')}</p>
+      ${Chip(t('demo_badge'),'bg-fuchsia-50 text-fuchsia-800 border border-fuchsia-200')}
+    </div>
+    <div class="rounded-xl2 border border-ns-violet-100 p-5 sm:col-span-2">
+      <p class="text-xs font-semibold text-ns-ink/50 uppercase mb-2">${t('about_prototype')}</p>
+      <p class="text-sm text-ns-ink/70">${{en:'Retinova — Smart India Hackathon 2026 prototype for Explainable AI for Diabetic Retinopathy Screening in Rural India. Frontend-only demo with a mock AI service (demo-mock-v0). Not a real medical device.',hi:'Retinova — ग्रामीण भारत में डायबिटिक रेटिनोपैथी जांच के लिए व्याख्यात्मक AI हेतु स्मार्ट इंडिया हैकाथॉन 2026 प्रोटोटाइप। मॉक AI सेवा (demo-mock-v0) के साथ केवल फ्रंटएंड डेमो। वास्तविक चिकित्सा उपकरण नहीं।',te:'Retinova — గ్రామీణ భారతదేశంలో డయాబెటిక్ రెటినోపతి స్క్రీనింగ్ కోసం వివరణాత్మక AI కోసం స్మార్ట్ ఇండియా హ్యాకథాన్ 2026 ప్రోటోటైప్. మాక్ AI సేవ (demo-mock-v0)తో ఫ్రంట్‌ఎండ్-మాత్రమే డెమో. నిజమైన వైద్య పరికరం కాదు.'}[STATE.lang]}</p>
+      <a href="#/disclaimer" class="text-ns-violet-700 text-sm font-medium mt-2 inline-block">${t('btn_disclaimer')} →</a>
+    </div>
+  </div>`;
+  return AppShell(t('settings_title'), content);
+}
+
+// ===================== VOICE ASSISTANT =====================
+function VoiceAssistantPage(){
+  const sttSupported = ('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window);
+  const suggestions = [
+    ['scan-line', t('voice_start'), "start_screening"],
+    ['message-circle', t('voice_explain'), "explain_result"],
+    ['volume-2', t('voice_read'), "read_result"],
+    ['globe', t('voice_lang'), "change_language"],
+    ['layout-dashboard', t('voice_dash'), "go_dashboard"],
+    ['camera', t('voice_photo'), "go_photo"],
+    ['shield-alert', t('voice_disc'), "go_disclaimer"],
+    ['help-circle', t('voice_what_is_dr'), "what_is_dr"],
+    ['upload', t('voice_how_upload'), "how_upload"],
+  ];
+  const content = `
+  <div class="max-w-2xl mx-auto text-center">
+    <span class="w-16 h-16 rounded-full grad-btn text-white grid place-items-center mx-auto mb-4 shadow-soft">${icon('mic','w-8 h-8')}</span>
+    <h2 class="font-display font-bold text-xl">${t('voice_title')}</h2>
+    <p class="text-ns-ink/60 mt-1">${t('voice_sub')}</p>
+
+    <button id="micBtn" onclick="App.toggleMic()" class="mt-6 w-20 h-20 rounded-full mx-auto grid place-items-center transition ${sttSupported?'bg-ns-violet-800 text-white hover:scale-105':'bg-stone-200 text-stone-400'} shadow-soft">
+      ${icon('mic','w-8 h-8')}
+    </button>
+    <p class="text-xs text-ns-ink/40 mt-3">${sttSupported? t('voice_listen') : t('mic_not_supported')}</p>
+
+    <div id="voiceTranscript" class="mt-4 min-h-[2rem] text-sm text-ns-violet-700 font-medium"></div>
+
+    <div id="voiceReplyBox" class="mt-2 p-4 rounded-xl2 bg-ns-violet-50/70 text-left text-sm text-ns-ink/80 hidden"></div>
+
+    <div class="flex items-center justify-center gap-2 mt-5">
+      <button onclick="App.speakControl('play')" class="w-10 h-10 rounded-full border border-ns-violet-200 grid place-items-center text-ns-violet-700">${icon('play','w-4 h-4')}</button>
+      <button onclick="App.speakControl('pause')" class="w-10 h-10 rounded-full border border-ns-violet-200 grid place-items-center text-ns-violet-700">${icon('pause','w-4 h-4')}</button>
+      <button onclick="App.speakControl('stop')" class="w-10 h-10 rounded-full border border-ns-violet-200 grid place-items-center text-ns-violet-700">${icon('square','w-4 h-4')}</button>
+      <button onclick="App.speakControl('replay')" class="w-10 h-10 rounded-full border border-ns-violet-200 grid place-items-center text-ns-violet-700">${icon('rotate-ccw','w-4 h-4')}</button>
+      ${LangSwitcher('bg-ns-violet-50 rounded-lg p-1 ml-2')}
+    </div>
+
+    <div class="grid sm:grid-cols-3 gap-2.5 mt-8 text-left">
+      ${suggestions.map(([ic,label,cmd])=>`<button onclick="App.voiceCommand('${cmd}')" class="flex items-center gap-2.5 p-3 rounded-xl border border-ns-violet-100 hover:border-ns-cyan-300 hover:bg-ns-cyan-50/40 transition text-sm">
+        <span class="text-ns-cyan-600 shrink-0">${icon(ic,'w-4.5 h-4.5')}</span><span>${label}</span>
+      </button>`).join('')}
+    </div>
+    <p class="text-xs text-ns-ink/40 mt-6">${t('voice_unsafe')}</p>
+  </div>`;
+  return AppShell(t('voice_title'), content);
+}
+
+function voiceReplyFor(cmd){
+  const L = STATE.lang;
+  const latest = STATE.screenings[0];
+  const dic = {
+    start_screening: {en:'Opening a new screening for you now.',hi:'अभी आपके लिए नई जांच खोल रहा हूँ।',te:'ఇప్పుడు మీ కోసం కొత్త స్క్రీనింగ్ తెరుస్తున్నాను.'},
+    explain_result: latest ? { en:`Your latest demo result is ${gLabel(latest.grade)}. ${(gInfo(latest.grade).meaning[L]||gInfo(latest.grade).meaning.en)}`,
+      hi:`आपका नवीनतम डेमो परिणाम ${gLabel(latest.grade)} है। ${(gInfo(latest.grade).meaning.hi)}`,
+      te:`మీ తాజా డెమో ఫలితం ${gLabel(latest.grade)}. ${(gInfo(latest.grade).meaning.te)}` } : {en:'No screenings yet. Start a new screening first.',hi:'अभी तक कोई जांच नहीं। पहले नई जांच शुरू करें।',te:'ఇంకా స్క్రీనింగ్‌లు లేవు. ముందుగా కొత్త స్క్రీనింగ్ ప్రారంభించండి.'},
+    read_result: latest ? hearResultScript(latest) : {en:'No screenings yet.',hi:'अभी तक कोई जांच नहीं।',te:'ఇంకా స్క్రీనింగ్‌లు లేవు.'},
+    change_language: {en:'You can switch language using the buttons above.',hi:'आप ऊपर दिए बटन से भाषा बदल सकते हैं।',te:'మీరు పైన ఉన్న బటన్లను ఉపయోగించి భాషను మార్చవచ్చు.'},
+    go_dashboard: {en:'Going to the dashboard.',hi:'डैशबोर्ड पर जा रहा हूँ।',te:'డాష్‌బోర్డ్‌కు వెళ్తున్నాను.'},
+    go_photo: {en:'Opening the photo guide.',hi:'फोटो गाइड खोल रहा हूँ।',te:'ఫోటో గైడ్ తెరుస్తున్నాను.'},
+    go_disclaimer: {en:'Opening the disclaimer.',hi:'अस्वीकरण खोल रहा हूँ।',te:'నిరాకరణ తెరుస్తున్నాను.'},
+    what_is_dr: {en:'Diabetic retinopathy is eye damage that can happen over time due to diabetes affecting the retina. Regular screening helps catch changes early.',
+      hi:'डायबिटिक रेटिनोपैथी मधुमेह के कारण समय के साथ रेटिना को होने वाली आंख की क्षति है। नियमित जांच से बदलावों को जल्दी पकड़ने में मदद मिलती है।',
+      te:'డయాబెటిక్ రెటినోపతి అనేది మధుమేహం వల్ల కాలక్రమేణా రెటినాకు జరిగే కంటి నష్టం. క్రమం తప్పకుండా స్క్రీనింగ్ మార్పులను ముందుగానే గుర్తించడంలో సహాయపడుతుంది.'},
+    how_upload: {en:'On the New Screening page, drag and drop a retinal photo, or tap Browse, or choose a demo image.',
+      hi:'नई जांच पृष्ठ पर, रेटिना फोटो खींचें और छोड़ें, या ब्राउज़ पर टैप करें, या डेमो चित्र चुनें।',
+      te:'కొత్త స్క్రీనింగ్ పేజీలో, రెటినా ఫోటోను లాగి వదలండి, లేదా బ్రౌజ్ నొక్కండి, లేదా డెమో చిత్రాన్ని ఎంచుకోండి.'},
+  };
+  return (dic[cmd] && (dic[cmd][L]||dic[cmd].en)) || t('voice_unsafe');
+}
+
+function hearResultScript(s){
+  const g = gInfo(s.grade);
+  return {
+    en:`This is a demo AI-assisted screening result, not a medical diagnosis. The sample output is: ${g.label.en}. ${g.next.en} Please consult a qualified eye-care professional for further evaluation.`,
+    hi:`यह एक डेमो AI-सहायता प्राप्त जांच परिणाम है, चिकित्सीय निदान नहीं। नमूना आउटपुट है: ${g.label.hi}। ${g.next.hi} आगे के मूल्यांकन के लिए कृपया एक योग्य नेत्र-देखभाल पेशेवर से परामर्श करें।`,
+    te:`ఇది డెమో AI-సహాయక స్క్రీనింగ్ ఫలితం, వైద్య నిర్ధారణ కాదు. నమూనా అవుట్‌పుట్: ${g.label.te}. ${g.next.te} తదుపరి మూల్యాంకనం కోసం దయచేసి అర్హత గల కంటి-సంరక్షణ నిపుణుడిని సంప్రదించండి.`,
+  };
+}
+
+// ===================== APP CONTROLLER =====================
+const App = {
+  setLang(code){ STATE.lang = code; render(); },
+  togglePw(){
+    const el = document.getElementById('loginPass');
+    if(!el) return;
+    el.type = el.type==='password' ? 'text':'password';
+  },
+  quickLogin(email){
+    const roleMap = {'worker@netrasetu.demo':'worker','doctor@netrasetu.demo':'doctor','admin@netrasetu.demo':'admin'};
+    STATE.user = { email, role: roleMap[email] || 'worker' };
+    navigate('#/dashboard');
+  },
+  login(ev){
+    ev.preventDefault();
+    const email = document.getElementById('loginEmail').value || 'worker@netrasetu.demo';
+    const roleMap = {'worker@netrasetu.demo':'worker','doctor@netrasetu.demo':'doctor','admin@netrasetu.demo':'admin'};
+    STATE.user = { email, role: roleMap[email] || 'worker' };
+    navigate('#/dashboard');
+  },
+  logout(){ STATE.user = null; navigate('#/'); },
+  toggleDrawer(open){
+    const d = document.getElementById('mobileDrawer');
+    if(!d) return;
+    d.classList.toggle('hidden', !open);
+  },
+
+  // wizard
+  setWizard(key,val){ STATE.wizard[key]=val; render(); },
+  genCode(){ STATE.wizard.patientCode = patientCodeGen(); render(); },
+  resetWizard(){ STATE.wizard = { step:1, patientCode:'', ageRange:'', gender:'', diabetes:'not_sure', eyeSel:'right', consent:false, imageKey:null, imageGrade:null, isBlurryGate:false, customName:null }; },
+  wizardNext1(){
+    const w = STATE.wizard;
+    w.patientCode = document.getElementById('w_patientCode').value || patientCodeGen();
+    w.ageRange = document.getElementById('w_age').value;
+    w.gender = document.getElementById('w_gender').value;
+    w.consent = document.getElementById('w_consent').checked;
+    w.step = 2;
+    render();
+  },
+  pickDemoImage(key, grade, blurryGate){
+    STATE.wizard.imageKey = key; STATE.wizard.imageGrade = grade; STATE.wizard.isBlurryGate = !!blurryGate; STATE.wizard.customName=null;
+    render();
+  },
+  handleFileInput(ev){
+    const file = ev.target.files[0];
+    if(!file) return;
+    const h = hashStr(file.name+file.size);
+    const grade = GRADES[h % (GRADES.length-1)];
+    STATE.wizard.imageKey = 'upload-'+file.name; STATE.wizard.imageGrade = grade; STATE.wizard.isBlurryGate=false; STATE.wizard.customName = file.name;
+    render();
+  },
+  handleDrop(ev){
+    ev.preventDefault();
+    const dz = document.getElementById('dropzone'); if(dz) dz.classList.remove('border-ns-cyan-500');
+    const file = ev.dataTransfer.files[0];
+    if(!file) return;
+    const h = hashStr(file.name+file.size);
+    const grade = GRADES[h % (GRADES.length-1)];
+    STATE.wizard.imageKey = 'upload-'+file.name; STATE.wizard.imageGrade = grade; STATE.wizard.isBlurryGate=false; STATE.wizard.customName = file.name;
+    render();
+  },
+  removeImage(){ STATE.wizard.imageKey=null; STATE.wizard.imageGrade=null; STATE.wizard.isBlurryGate=false; STATE.wizard.customName=null; render(); },
+  wizardNext2(){ STATE.wizard.step = 3; render(); },
+  startAnalysis(){
+    navigate('#/screening/analyze');
+    setTimeout(runAnalysisSequence, 60);
+  },
+
+  // result page
+  moveSlider(val){
+    const layer = document.getElementById('heatLayer');
+    if(layer) layer.style.clipPath = `inset(0 0 0 ${val}%)`;
+    const handle = document.getElementById('sliderHandle');
+    if(handle) handle.style.left = val+'%';
+  },
+  hearResult(id){
+    const s = findScreening(id);
+    if(!s) return;
+    const script = hearResultScript(s)[STATE.lang] || hearResultScript(s).en;
+    speak(script);
+  },
+
+  // patients / history filters
+  filterPatients(q){
+    q = q.toLowerCase();
+    document.querySelectorAll('#patientsBody tr').forEach(tr=>{
+      tr.style.display = tr.dataset.code.includes(q) ? '' : 'none';
+    });
+  },
+  filterHistory(grade){
+    document.querySelectorAll('#historyBody tr').forEach(tr=>{
+      tr.style.display = (!grade || tr.dataset.grade===grade) ? '' : 'none';
+    });
+  },
+
+  // accessibility
+  setFontSize(v){
+    STATE.a11y.fontSize = v;
+    document.body.classList.remove('a11y-large');
+    if(v==='large') document.body.classList.add('a11y-large');
+    render();
+  },
+  toggleContrast(){ STATE.a11y.highContrast = !STATE.a11y.highContrast; render(); },
+  toggleVoiceGuidance(){ STATE.a11y.voiceGuidance = !STATE.a11y.voiceGuidance; render(); },
+
+  // voice assistant
+  toggleMic(){
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR){ document.getElementById('voiceTranscript').textContent = t('mic_not_supported'); return; }
+    const rec = new SR();
+    rec.lang = STATE.lang==='hi' ? 'hi-IN' : STATE.lang==='te' ? 'te-IN' : 'en-IN';
+    rec.onresult = (e)=>{
+      const text = e.results[0][0].transcript;
+      document.getElementById('voiceTranscript').textContent = text;
+      App.processVoiceText(text);
+    };
+    rec.onerror = ()=>{ document.getElementById('voiceTranscript').textContent = t('mic_not_supported'); };
+    rec.start();
+  },
+  processVoiceText(text){
+    const low = text.toLowerCase();
+    let cmd = null;
+    if(/screen|जांच|స్క్రీన/.test(low)) cmd='start_screening';
+    else if(/explain|result|परिणाम|ఫలిత/.test(low)) cmd='explain_result';
+    else if(/read|सुनाओ|చదవ/.test(low)) cmd='read_result';
+    else if(/dashboard|डैशबोर्ड|డాష్‌బోర్డ్/.test(low)) cmd='go_dashboard';
+    else if(/photo|फोटो|ఫోటో/.test(low)) cmd='go_photo';
+    else if(/disclaimer|अस्वीकरण|నిరాకరణ/.test(low)) cmd='go_disclaimer';
+    else if(/what is|diabetic retinopathy|रेटिनोपैथी|రెటినోపతి/.test(low)) cmd='what_is_dr';
+    else if(/upload|अपलोड|అప్‌లోడ్/.test(low)) cmd='how_upload';
+    if(cmd) App.voiceCommand(cmd); else App.showVoiceReply(t('voice_unsafe'), true);
+  },
+  voiceCommand(cmd){
+    const reply = voiceReplyFor(cmd);
+    App.showVoiceReply(reply);
+    speak(reply);
+    const navMap = { start_screening:'#/screening/new', go_dashboard:'#/dashboard', go_photo:'#/photo-guide', go_disclaimer:'#/disclaimer' };
+    if(navMap[cmd]) setTimeout(()=>navigate(navMap[cmd]), 900);
+  },
+  showVoiceReply(text){
+    const box = document.getElementById('voiceReplyBox');
+    if(!box) return;
+    box.textContent = text; box.classList.remove('hidden');
+  },
+  speakControl(action){
+    if(action==='stop'){ window.speechSynthesis && window.speechSynthesis.cancel(); }
+    else if(action==='pause'){ window.speechSynthesis && window.speechSynthesis.pause(); }
+    else if(action==='play'){ window.speechSynthesis && window.speechSynthesis.resume(); }
+    else if(action==='replay' && STATE.voice.lastUtterance){ speak(STATE.voice.lastUtterance); }
+  },
+};
+
+function speak(text){
+  STATE.voice.lastUtterance = text;
+  if(!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = STATE.lang==='hi' ? 'hi-IN' : STATE.lang==='te' ? 'te-IN' : 'en-IN';
+  window.speechSynthesis.speak(u);
+}
+
+// ===================== ROUTER =====================
+function render(){
+  const app = document.getElementById('app');
+  const parts = routeParts();
+  let html = '';
+
+  if(parts.length===0){ html = Landing(); }
+  else if(parts[0]==='how-it-works'){ html = HowItWorks(); }
+  else if(parts[0]==='disclaimer'){ html = STATE.user ? AppShell(t('disclaimer_title'), DisclaimerInner()) : Disclaimer(); }
+  else if(parts[0]==='login'){ html = STATE.user ? (navigate('#/dashboard'), '') : Login(); }
+  else if(parts[0]==='dashboard'){ if(!requireAuth()) return; html = Dashboard(); }
+  else if(parts[0]==='screening' && parts[1]==='new'){ if(!requireAuth()) return; html = NewScreeningPage(); }
+  else if(parts[0]==='screening' && parts[1]==='analyze'){ if(!requireAuth()) return; html = AnalysisPage(); }
+  else if(parts[0]==='screening' && parts[1]==='result'){ if(!requireAuth()) return; html = ResultPage(parts[2]); }
+  else if(parts[0]==='reports'){ if(!requireAuth()) return; html = ReportPage(parts[1]); }
+  else if(parts[0]==='patients'){ if(!requireAuth()) return; html = PatientsPage(); }
+  else if(parts[0]==='history'){ if(!requireAuth()) return; html = HistoryPage(); }
+  else if(parts[0]==='voice-assistant'){ if(!requireAuth()) return; html = VoiceAssistantPage(); }
+  else if(parts[0]==='photo-guide'){ if(!requireAuth()) return; html = PhotoGuidePage(); }
+  else if(parts[0]==='accessibility'){ if(!requireAuth()) return; html = AccessibilityPage(); }
+  else if(parts[0]==='settings'){ if(!requireAuth()) return; html = SettingsPage(); }
+  else { html = Landing(); }
+
+  if(html==='') return;
+  app.innerHTML = `<div class="fade-in">${html}</div>`;
+  window.scrollTo({top:0, behavior:'instant'});
+  if(window.lucide) lucide.createIcons();
+}
+
+render();
+</script>
+</body>
+</html>
+sudo apt install python3.12-venv
